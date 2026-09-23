@@ -1,0 +1,39 @@
+{
+    "name": "snapask-desktop",
+    "version": "0.1.0",
+    "description": "Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.",
+    "main": "src/main/main.js",
+    "private": true,
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "dist": "electron-builder --win --publish never",
+        "icons": "node build/make-icon.js"
+    },
+    "build": {
+        "appId": "vn.snapask.desktop",
+        "productName": "SnapAsk",
+        "directories": {
+            "output": "dist",
+            "buildResources": "build"
+        },
+        "files": [
+            "src/**/*",
+            "package.json"
+        ],
+        "win": {
+            "target": [
+                "nsis"
+            ],
+            "icon": "src/assets/icon.png"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        }
+    },
+    "devDependencies": {
+        "electron": "^44.4.5",
+        "electron-builder": "^26.15.3"
+    }
+}

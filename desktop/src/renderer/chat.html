@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>SnapAsk</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="chat">
+  <header class="bar">
+    <span class="bar__title">SnapAsk</span>
+    <div class="bar__actions">
+      <button id="recapture" class="icon" title="Chụp vùng khác">⧉</button>
+      <button id="close" class="icon" title="Ẩn">×</button>
+    </div>
+  </header>
+
+  <figure id="preview" class="preview" hidden>
+    <img id="preview-image" alt="Vùng màn hình vừa chụp">
+    <figcaption id="preview-meta"></figcaption>
+  </figure>
+
+  <main id="thread" class="thread">
+    <div id="empty" class="empty">
+      <span class="empty__key">Ctrl + Alt + W</span>
+      <p>Quét chọn một vùng màn hình, rồi hỏi bất cứ điều gì về nó.</p>
+    </div>
+  </main>
+
+  <footer class="composer">
+    <textarea id="question" rows="1" placeholder="Hỏi về vùng vừa chụp…"></textarea>
+    <button id="send" class="send">Hỏi</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

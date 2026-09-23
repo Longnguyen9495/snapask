@@ -1,0 +1,15 @@
+# Cơ sở dữ liệu SQLite chứa tài khoản thật và lịch sử hội thoại — Laravel không
+# tự bỏ qua file này.
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# Bộ cài đã đóng gói, dựng lại được bằng `npm run dist`.
+dist/
+
+node_modules/
+vendor/
+
+.DS_Store
+Thumbs.db
