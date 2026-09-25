@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Quyền cho bản macOS đã bật hardened runtime.
+
+  Giữ đúng mức tối thiểu: mỗi dòng thêm vào đây là một thứ Apple sẽ hỏi lúc
+  notarize, và là một quyền người dùng phải tin tưởng giao cho.
+-->
+<plist version="1.0">
+<dict>
+    <!--
+      Electron chạy JIT của V8, nên bộ nhớ vừa ghi vừa thực thi là bắt buộc.
+      Thiếu hai dòng này thì ứng dụng chết ngay khi mở trên bản đã ký.
+    -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+
+    <!--
+      Ảnh chụp màn hình đi tới máy chủ SnapAsk và tới nhà cung cấp mô hình.
+    -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!--
+      Lưu ảnh ra file khi người dùng bấm Ctrl+S: chỉ đúng thư mục họ tự chọn
+      trong hộp thoại, không phải quyền đọc cả đĩa.
+    -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+</dict>
+</plist>

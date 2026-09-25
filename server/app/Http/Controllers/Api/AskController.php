@@ -25,7 +25,7 @@ class AskController extends Controller
         // token đã mất rồi, và một người giữ phím tắt là đủ thủng cả gói.
         if (! $user->hasAsksRemaining()) {
             return response()->json([
-                'message' => 'Đã dùng hết lượt hỏi của tháng này.',
+                'message' => __('Monthly ask limit reached.'),
                 'quota' => $user->quotaSummary(),
             ], 429);
         }
@@ -60,7 +60,7 @@ class AskController extends Controller
                 // chi tiết hạ tầng, nên máy khách chỉ nhận một câu chung.
                 yield json_encode([
                     'type' => 'error',
-                    'message' => 'Không lấy được câu trả lời. Hãy thử lại sau ít phút.',
+                    'message' => __('Could not get an answer. Try again in a few minutes.'),
                 ], JSON_UNESCAPED_UNICODE);
             }
         }, endStreamWith: '[DONE]');

@@ -329,14 +329,14 @@ async function finish(action) {
 
   if (action === 'copy') {
     await window.overlay.copy(dataUrl);
-    flash('Đã sao chép ảnh vào clipboard.');
+    flash(window.i18n.t('Image copied to the clipboard.'));
 
     return;
   }
 
   if (action === 'save') {
     const saved = await window.overlay.save(dataUrl);
-    flash(saved ? 'Đã lưu ảnh.' : 'Chưa lưu ảnh.');
+    flash(saved ? window.i18n.t('Image saved.') : window.i18n.t('Nothing was saved.'));
 
     return;
   }
@@ -645,3 +645,6 @@ window.overlay.onImage(({ dataUrl, cssWidth }) => {
 
   shot.src = dataUrl;
 });
+
+// Lớp phủ chỉ có chữ nằm sẵn trong HTML, nên dịch xong là xong.
+window.i18n.start();

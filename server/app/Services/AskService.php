@@ -19,12 +19,21 @@ class AskService
     của họ rồi hỏi về đúng vùng đó.
 
     Quy tắc:
-    - Trả lời bằng ngôn ngữ của câu hỏi.
+    - Trả lời bằng ngôn ngữ của câu hỏi. Câu hỏi quá ngắn hoặc không rõ là thứ
+      tiếng nào thì dùng :fallback.
     - Bám vào những gì thật sự nhìn thấy trong ảnh. Không đoán thêm chi tiết.
     - Nếu ảnh mờ hoặc thiếu phần cần thiết, nói thẳng là không đọc được thay vì suy diễn.
     - Trả lời gọn, đi thẳng vào việc. Dùng markdown khi thật sự giúp dễ đọc.
     - Nếu ảnh chứa thông tin nhạy cảm (mật khẩu, số thẻ), trả lời câu hỏi nhưng không chép lại nguyên văn các giá trị đó.
     TEXT;
+
+    /**
+     * Tên ngôn ngữ để chèn vào system prompt.
+     *
+     * Viết bằng tiếng Anh vì đó là thứ tiếng mà mọi mô hình đều hiểu chắc chắn,
+     * kể cả những mô hình yếu tiếng Việt.
+     */
+    private const LOCALE_NAMES = ['vi' => 'Vietnamese', 'en' => 'English'];
 
     private const ALLOWED_MIMES = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -199,7 +208,20 @@ class AskService
      */
     private function buildMessages(Conversation $conversation, string $question): array
     {
-        $messages = [['role' => 'system', 'content' => self::SYSTEM_PROMPT]];
+        /*
+         * Ngôn ngữ để lùi về khi không đoán được từ câu hỏi: lựa chọn của chính
+         * người dùng, rồi mới tới ngôn ngữ của request hiện tại.
+         *
+         * Cần thiết vì phần lớn câu hỏi ở đây rất ngắn — "cái này là gì", "dịch
+         * đi" — mà từ vài chữ như vậy mô hình hay đoán nhầm sang tiếng Anh.
+         */
+        $locale = $conversation->user?->locale ?? app()->getLocale();
+        $fallback = self::LOCALE_NAMES[$locale] ?? self::LOCALE_NAMES['vi'];
+
+        $messages = [[
+            'role' => 'system',
+            'content' => str_replace(':fallback', $fallback, self::SYSTEM_PROMPT),
+        ]];
 
         $history = $conversation->messages()
             ->latest('id')

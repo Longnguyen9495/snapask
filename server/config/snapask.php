@@ -93,6 +93,62 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ngôn ngữ
+    |--------------------------------------------------------------------------
+    |
+    | Hai thứ tiếng, khai ở một chỗ để middleware, route công khai và ứng dụng
+    | desktop cùng đọc một danh sách. Thứ tự trong mảng cũng là thứ tự hiện trên
+    | nút chuyển ngôn ngữ.
+    |
+    | Tiếng Việt không có tiền tố URL vì đó là bản mặc định; tiếng Anh nằm dưới
+    | /en để Google lập chỉ mục riêng từng bản.
+    |
+    */
+    'locales' => [
+        'vi' => ['name' => 'Tiếng Việt', 'short' => 'VI', 'prefix' => '', 'html' => 'vi'],
+        'en' => ['name' => 'English', 'short' => 'EN', 'prefix' => 'en', 'html' => 'en'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bản phát hành cho trang tải về
+    |--------------------------------------------------------------------------
+    |
+    | Trang tải về và DownloadFileController cùng đọc khối này, nên đổi bản mới
+    | chỉ sửa một chỗ.
+    |
+    | `url` để trống thì file được lấy từ đĩa `disk` bên dưới; điền vào thì người
+    | tải được chuyển thẳng sang đó, để băng thông không đi qua máy chủ này.
+    |
+    | `sha256` hiện trên trang tải về cho khách tự đối chiếu — bộ cài chưa ký số
+    | thì đây là cách duy nhất để họ biết file không bị đổi giữa đường.
+    |
+    */
+    'releases' => [
+        'version' => env('SNAPASK_RELEASE_VERSION', '0.1.0'),
+        'released_at' => env('SNAPASK_RELEASE_DATE'),
+        'disk' => env('SNAPASK_RELEASE_DISK', 'releases'),
+
+        'builds' => [
+            'windows' => [
+                'file' => env('SNAPASK_RELEASE_WIN_FILE'),
+                'url' => env('SNAPASK_RELEASE_WIN_URL'),
+                'size' => (int) env('SNAPASK_RELEASE_WIN_SIZE', 0),
+                'sha256' => env('SNAPASK_RELEASE_WIN_SHA256'),
+                'min_os' => env('SNAPASK_RELEASE_WIN_MIN_OS', 'Windows 10'),
+            ],
+            'mac' => [
+                'file' => env('SNAPASK_RELEASE_MAC_FILE'),
+                'url' => env('SNAPASK_RELEASE_MAC_URL'),
+                'size' => (int) env('SNAPASK_RELEASE_MAC_SIZE', 0),
+                'sha256' => env('SNAPASK_RELEASE_MAC_SHA256'),
+                'min_os' => env('SNAPASK_RELEASE_MAC_MIN_OS', 'macOS 12'),
+            ],
+        ],
+    ],
+
     'history_limit' => (int) env('SNAPASK_HISTORY_LIMIT', 12),
 
     'max_question_length' => (int) env('SNAPASK_MAX_QUESTION_LENGTH', 2000),

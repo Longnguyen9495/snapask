@@ -49,7 +49,7 @@ class ProviderRequest extends FormRequest
     protected function passedValidation(): void
     {
         if ($this->modelList() === []) {
-            $this->validator->errors()->add('models', 'Hãy khai ít nhất một mã mô hình.');
+            $this->validator->errors()->add('models', __('Declare at least one model id.'));
             $this->failedValidation($this->validator);
         }
     }
@@ -58,10 +58,10 @@ class ProviderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.unique' => 'Bạn đã có một nhà cung cấp trùng tên.',
-            'base_url.url' => 'Địa chỉ phải là một URL https hợp lệ.',
-            'api_key.required' => 'Hãy nhập khoá API.',
-            'models.required' => 'Hãy khai ít nhất một mã mô hình.',
+            'name.unique' => __('You already have a provider with this name.'),
+            'base_url.url' => __('The address must be a valid https URL.'),
+            'api_key.required' => __('Enter the API key.'),
+            'models.required' => __('Declare at least one model id.'),
         ];
     }
 }

@@ -30,7 +30,9 @@ npm start
 ```
 
 Đăng nhập hoặc tạo tài khoản ngay trong cửa sổ vừa hiện, rồi bấm **`Ctrl + Alt + W`**
-để quét chọn một vùng màn hình.
+(trên macOS là **`Cmd + Shift + 2`**) để quét chọn một vùng màn hình.
+
+Trang chủ nằm ở `http://localhost:8000`, bản tiếng Anh ở `/en`.
 
 App không hỏi địa chỉ máy chủ — nó nằm trong `desktop/src/main/config.js`, sửa
 trước khi build. Lúc phát triển thì đặt biến `SNAPASK_SERVER_URL` để trỏ đi nơi
@@ -90,8 +92,17 @@ mạng vẫn hiện đúng dấu.
 
 ## Thao tác khi chụp
 
-Phím tắt cố định **`Ctrl + Alt + W`** trên mọi máy. Đổi được bằng biến
-`SNAPASK_HOTKEY`, dành cho lúc tổ hợp này đã bị phần mềm khác chiếm.
+Phím tắt cố định theo hệ điều hành. Đổi được bằng biến `SNAPASK_HOTKEY`, dành
+cho lúc tổ hợp này đã bị phần mềm khác chiếm.
+
+| Hệ điều hành | Phím tắt | Vì sao |
+|---|---|---|
+| Windows, Linux | **`Ctrl + Alt + W`** | |
+| macOS | **`Cmd + Shift + 2`** | `Ctrl+Alt+W` nằm sai tay trên bàn phím Mac, còn `Cmd+Shift+3/4/5` đã thuộc về công cụ chụp của hệ điều hành |
+
+Lần đầu chụp trên macOS, hệ điều hành hỏi quyền **Screen Recording**. Chưa cấp
+thì ảnh chụp ra toàn màu đen, nên app chặn trước và mở thẳng tới đúng trang cài
+đặt. Cấp xong phải mở lại app — macOS chỉ đọc lại danh sách quyền lúc khởi động.
 
 | Thao tác | Kết quả |
 |---|---|
@@ -160,13 +171,92 @@ thì dùng khoá của chính họ và không bị hạn mức chặn.
 `SNAPASK_IMAGE_RETENTION_DAYS` ngày (mặc định 14) bởi `php artisan snapask:prune`,
 đã đặt lịch chạy hằng ngày lúc 03:10. Lịch sử chữ vẫn được giữ.
 
+Khách xem lại hội thoại cũ trên trang `/conversations`, xoá được từng cái một.
+Ảnh đi qua controller chứ không nằm trong `public/`: mỗi lần xem đều kiểm tra
+chủ sở hữu, nên đoán id không đọc được ảnh của người khác. Xoá một hội thoại là
+xoá luôn ảnh của nó, không đợi tới lượt `snapask:prune`.
+
+## Song ngữ
+
+Tiếng Việt và tiếng Anh, dùng chung một cách khai: khoá là câu tiếng Anh, nên
+chuỗi nào quên dịch vẫn đọc được thay vì hiện ra một mã khoá trần trụi.
+
+| | File | Chọn ngôn ngữ theo |
+|---|---|---|
+| Trang công khai (`/`, `/download`) | `server/lang/{vi,en}.json` | Tiền tố URL — `/` là tiếng Việt, `/en` là tiếng Anh |
+| Trang quản trị | như trên | `users.locale` → cookie `locale` → `Accept-Language` |
+| App desktop | `desktop/src/i18n/{vi,en}.json` | Lựa chọn trong app → `users.locale` → ngôn ngữ hệ điều hành |
+
+Trang công khai **không** nghe cookie hay `Accept-Language`: `/` luôn là tiếng
+Việt và `/en` luôn là tiếng Anh, bằng không hai địa chỉ khai là bản dịch của
+nhau lại trả về cùng một thứ tiếng và thẻ `hreflang` thành lời nói dối.
+
+Đổi ngôn ngữ ở một nơi thì nơi kia nhận theo, qua cột `users.locale`. App desktop
+gửi `Accept-Language` ở mọi lời gọi, nên thông báo lỗi từ máy chủ cũng về đúng
+thứ tiếng đang xem.
+
+Thiếu một khoá thì test bắt được:
+
+```bash
+cd server && php artisan test --filter=LocaleTest   # so khoá + không còn chữ viết cứng
+cd desktop && npm run i18n:check                    # so khoá + so chỗ giữ chỗ :ten
+```
+
+## Đóng gói
+
+Mỗi hệ điều hành một file:
+
+```bash
+cd desktop
+npm run icons      # sinh icon.png, tray, icon.ico, icon.icns
+npm run dist:win   # SnapAsk-<ver>-win-x64.exe   — chạy thẳng, không cần cài
+npm run dist:mac   # SnapAsk-<ver>-mac-universal.dmg — chỉ chạy được trên máy Mac
+```
+
+Bản macOS **phải dựng trên máy Mac**: `electron-builder` gọi tới công cụ của
+Xcode để ghép bản universal và tạo ảnh đĩa. `.github/workflows/release.yml` làm
+việc đó khi đẩy tag `v*`, dựng song song trên `windows-latest` và `macos-latest`
+rồi đính file kèm `SHA256SUMS.txt` vào một GitHub Release nháp.
+
+Bộ cài chưa ký số nên Windows hiện SmartScreen còn macOS hiện Gatekeeper; trang
+`/download` đã hướng dẫn cách mở. Muốn ký thì khai các secret `CSC_LINK`,
+`CSC_KEY_PASSWORD`, và cho macOS thêm `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+`APPLE_TEAM_ID` — để trống thì workflow bỏ qua bước ký chứ không gãy.
+
+Bản Windows dùng đích `portable`. Sau này cần tự cập nhật thì phải quay lại
+`nsis`, vì `electron-updater` không hỗ trợ bản portable.
+
+> Máy nào đã đặt sẵn `ELECTRON_RUN_AS_NODE=1` — terminal tích hợp của VS Code là
+> một — thì bộ cài mở lên rồi thoát ngay, không báo lỗi gì. Biến này truyền cả
+> sang tiến trình mà bản portable giải nén ra. Xoá hẳn biến trước khi chạy:
+> `Remove-Item Env:\ELECTRON_RUN_AS_NODE` trên PowerShell, hoặc
+> `env -u ELECTRON_RUN_AS_NODE ./SnapAsk-<ver>-win-x64.exe` trên bash.
+
+### Phát hành lên trang tải về
+
+Khai trong `server/.env` để trang `/download` và `/download/{platform}` biết lấy
+file ở đâu. Điền `*_URL` thì người tải được chuyển thẳng sang đó; để trống thì
+file được lấy từ `server/storage/app/releases/`.
+
+```dotenv
+SNAPASK_RELEASE_VERSION=0.2.0
+SNAPASK_RELEASE_WIN_FILE=SnapAsk-0.2.0-win-x64.exe
+SNAPASK_RELEASE_WIN_URL=https://github.com/…/SnapAsk-0.2.0-win-x64.exe
+SNAPASK_RELEASE_WIN_SIZE=98765432
+SNAPASK_RELEASE_WIN_SHA256=…
+```
+
+Chưa khai bản nào thì trang tải về nói thẳng là chưa phát hành, còn
+`/download/{platform}` trả 404 — không có trang trắng nào.
+
 ## Chưa có
 
 Những phần cần làm trước khi bán được cho khách ngoài:
 
 - Đăng nhập bằng Google, Facebook, Zalo — giao diện đã dựng, phần nối thật chưa làm
 - Thanh toán và nâng gói — hiện mọi tài khoản mới đều vào gói mặc định trong `config/snapask.php`
-- Trang web xem lại lịch sử hội thoại (API đã có: `GET /api/conversations`)
-- Tự cập nhật bản mới (`electron-updater`) và ký số bộ cài Windows
+- Tự cập nhật bản mới (`electron-updater`)
+- Ký số bộ cài: Windows cần chứng chỉ code signing, macOS cần Apple Developer Program
 - Màn hình cài đặt trong app cho khoá provider riêng của khách
 - OAuth cho connector MCP — hiện mới nhận token dán tay
+- Video và ảnh demo thật cho trang chủ — hiện đang là một khối minh hoạ dựng bằng CSS

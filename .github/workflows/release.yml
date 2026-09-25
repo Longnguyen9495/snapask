@@ -1,0 +1,110 @@
+# Dựng bộ cài cho Windows và macOS rồi đính vào GitHub Release.
+#
+# Bản macOS bắt buộc phải dựng trên máy Mac — `electron-builder` gọi tới công cụ
+# của Xcode để ghép bản universal và tạo ảnh đĩa, không máy nào khác làm thay.
+#
+# Chưa có chứng chỉ ký số thì vẫn chạy được: các secret bên dưới để trống thì
+# electron-builder bỏ qua bước ký, và bộ cài ra lò vẫn dùng được, chỉ là người
+# tải về phải bấm qua cảnh báo của hệ điều hành. Trang tải về đã hướng dẫn.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+  # Dựng thử mà không phát hành, để biết cấu hình còn chạy trước khi gắn tag.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      # Một nền tảng hỏng thì nền tảng kia vẫn dựng xong, để còn biết lỗi nằm ở
+      # riêng một bên hay ở cả hai.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+            pattern: 'SnapAsk-*.exe'
+          - os: macos-latest
+            script: dist:mac
+            pattern: 'SnapAsk-*.dmg'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Cài phụ thuộc
+        working-directory: desktop
+        run: npm ci
+
+      - name: Kiểm hai file ngôn ngữ
+        working-directory: desktop
+        run: npm run i18n:check
+
+      - name: Sinh icon
+        working-directory: desktop
+        run: npm run icons
+
+      - name: Dựng bộ cài
+        working-directory: desktop
+        run: npm run ${{ matrix.script }}
+        env:
+          # Chứng chỉ ký số. Để trống thì bỏ qua bước ký.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # Notarize cho macOS; thiếu một trong ba thì electron-builder bỏ qua.
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Tính SHA-256
+        shell: bash
+        working-directory: desktop/dist
+        run: |
+          # Trang tải về hiện mã này cho khách tự đối chiếu — với bộ cài chưa ký
+          # số thì đó là cách duy nhất họ biết file không bị đổi giữa đường.
+          shasum -a 256 ${{ matrix.pattern }} > "SHA256SUMS-${{ runner.os }}.txt"
+          cat "SHA256SUMS-${{ runner.os }}.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snapask-${{ runner.os }}
+          path: |
+            desktop/dist/${{ matrix.pattern }}
+            desktop/dist/SHA256SUMS-${{ runner.os }}.txt
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Chỉ phát hành khi có tag; lần chạy tay chỉ để dựng thử.
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Gộp bảng mã băm
+        run: cat dist/SHA256SUMS-*.txt > dist/SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/SnapAsk-*.exe
+            dist/SnapAsk-*.dmg
+            dist/SHA256SUMS.txt
+          draft: true
+          generate_release_notes: true

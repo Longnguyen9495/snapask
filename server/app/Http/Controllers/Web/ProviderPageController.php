@@ -35,7 +35,7 @@ class ProviderPageController extends Controller
         }
 
         return redirect()->route('web.providers.index')
-            ->with('status', "Đã thêm {$provider->name}.");
+            ->with('status', __('Added :name.', ['name' => $provider->name]));
     }
 
     public function update(ProviderRequest $request, ModelProvider $provider): RedirectResponse
@@ -47,7 +47,7 @@ class ProviderPageController extends Controller
             'models' => $request->modelList(),
         ]);
 
-        return redirect()->route('web.providers.index')->with('status', 'Đã cập nhật.');
+        return redirect()->route('web.providers.index')->with('status', __('Updated.'));
     }
 
     /** Chọn nhà cung cấp và mô hình dùng cho các lượt hỏi tiếp theo. */
@@ -58,13 +58,13 @@ class ProviderPageController extends Controller
         $model = (string) $request->string('model');
 
         if (! in_array($model, $provider->models, true)) {
-            return back()->with('status', 'Mô hình này không có trong danh sách.');
+            return back()->with('status', __('That model is not in the list.'));
         }
 
         $this->activate($request, $provider, $model);
 
         return redirect()->route('web.providers.index')
-            ->with('status', "Đang dùng {$model} qua {$provider->name}.");
+            ->with('status', __('Now using :model via :provider.', ['model' => $model, 'provider' => $provider->name]));
     }
 
     /** Quay về nhà cung cấp mặc định của hệ thống, kèm hạn mức theo gói. */
@@ -73,7 +73,7 @@ class ProviderPageController extends Controller
         $request->user()->update(['active_provider_id' => null, 'active_model' => null]);
 
         return redirect()->route('web.providers.index')
-            ->with('status', 'Đã quay về nhà cung cấp mặc định.');
+            ->with('status', __('Back on the default provider.'));
     }
 
     public function destroy(Request $request, ModelProvider $provider): RedirectResponse
@@ -88,7 +88,7 @@ class ProviderPageController extends Controller
             $request->user()->update(['active_model' => null]);
         }
 
-        return redirect()->route('web.providers.index')->with('status', 'Đã xoá nhà cung cấp.');
+        return redirect()->route('web.providers.index')->with('status', __('Provider deleted.'));
     }
 
     private function activate(Request $request, ModelProvider $provider, string $model): void

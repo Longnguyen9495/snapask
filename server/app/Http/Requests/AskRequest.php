@@ -27,10 +27,10 @@ class AskRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'conversation_id.exists' => 'Không tìm thấy hội thoại này.',
-            'question.required' => 'Hãy nhập câu hỏi.',
-            'question.max' => 'Câu hỏi quá dài.',
-            'image.starts_with' => 'Ảnh gửi lên không đúng định dạng.',
+            'conversation_id.exists' => __('Conversation not found.'),
+            'question.required' => __('Enter a question.'),
+            'question.max' => __('The question is too long.'),
+            'image.starts_with' => __('The uploaded image is not in a supported format.'),
         ];
     }
 }

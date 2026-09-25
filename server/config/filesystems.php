@@ -38,6 +38,17 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Bộ cài đã dựng. Nằm ngoài public/ để chỉ đi qua DownloadFileController,
+         * nhờ đó mỗi lượt tải đều được ghi nhận.
+         */
+        'releases' => [
+            'driver' => 'local',
+            'root' => storage_path('app/releases'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

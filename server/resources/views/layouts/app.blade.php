@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="vi">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>@yield('title', 'SnapAsk')</title>
-<meta name="description" content="@yield('description', 'Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.')">
+<meta name="description" content="@yield('description', __('Snap a region of your screen and ask AI right there.'))">
 <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 <link rel="stylesheet" href="{{ asset('fonts/fonts.css') }}">
 {{--
@@ -160,6 +160,10 @@
   .tabular { font-variant-numeric: tabular-nums; }
 
   .nav { display: flex; gap: 2px; margin-left: auto; }
+
+  /* Chưa đăng nhập thì không có nav, nút ngôn ngữ tự lùi về mép phải. */
+  .lang { margin-left: auto; }
+  .nav + .lang { margin-left: 8px; }
   .nav__link {
     padding: 7px 13px; border-radius: var(--r-sm);
     font-size: 13.5px; font-weight: 500; color: var(--text-faint); text-decoration: none;
@@ -200,7 +204,9 @@
 </style>
 </head>
 <body>
-  <a href="#main" class="skip">Tới nội dung chính</a>
+  <a href="#main" class="skip">{{ __('Skip to main content') }}</a>
+
+  @php($locale = app()->getLocale())
 
   <div class="wrap @yield('wrap-modifier')">
     <header class="brand">
@@ -215,10 +221,21 @@
 
       @auth
         <nav class="nav">
-          <a href="{{ route('web.providers.index') }}" @class(['nav__link', 'nav__link--on' => request()->routeIs('web.providers.*')])>Mô hình</a>
-          <a href="{{ route('web.connectors.index') }}" @class(['nav__link', 'nav__link--on' => request()->routeIs('web.connectors.*')])>Dịch vụ</a>
+          <a href="{{ route('web.providers.index') }}" @class(['nav__link', 'nav__link--on' => request()->routeIs('web.providers.*')])>{{ __('Models') }}</a>
+          <a href="{{ route('web.connectors.index') }}" @class(['nav__link', 'nav__link--on' => request()->routeIs('web.connectors.*')])>{{ __('Services') }}</a>
+          <a href="{{ route('web.conversations.index') }}" @class(['nav__link', 'nav__link--on' => request()->routeIs('web.conversations.*')])>{{ __('History') }}</a>
         </nav>
       @endauth
+
+      {{--
+        Nút chuyển ngôn ngữ: form POST chứ không phải link, vì bấm vào đây là ghi
+        cookie và ghi vào tài khoản — một hành động, không phải một trang để xem.
+      --}}
+      <form method="POST" action="{{ route('locale.switch', $locale === 'vi' ? 'en' : 'vi') }}" class="lang">
+        @csrf
+        <button type="submit" class="btn--quiet" title="{{ __('Switch language') }}"
+                aria-label="{{ __('Switch language') }}">{{ $locale === 'vi' ? 'EN' : 'VI' }}</button>
+      </form>
     </header>
 
     <main id="main">

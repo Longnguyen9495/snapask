@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Không tìm thấy trang · SnapAsk')
+@section('title', __('Page not found · SnapAsk'))
 @section('wrap-modifier', 'wrap--narrow')
 
 @section('content')
-  <h1>Không tìm thấy trang này</h1>
-  <p class="lead">Đường dẫn bạn vừa mở không tồn tại, hoặc đã bị xoá.</p>
+  <h1>{{ __('Page not found') }}</h1>
+  <p class="lead">{{ __('That address does not exist, or it has been removed.') }}</p>
 
-  <a href="{{ url('/') }}" class="btn">Về trang chính</a>
+  <a href="{{ url('/') }}" class="btn">{{ __('Back to home') }}</a>
 @endsection

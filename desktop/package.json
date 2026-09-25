@@ -1,18 +1,22 @@
 {
     "name": "snapask-desktop",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.",
     "main": "src/main/main.js",
     "private": true,
     "scripts": {
         "start": "electron .",
         "dev": "electron . --dev",
-        "dist": "electron-builder --win --publish never",
-        "icons": "node build/make-icon.js"
+        "dist": "npm run dist:win",
+        "dist:win": "electron-builder --win --publish never",
+        "dist:mac": "electron-builder --mac --publish never",
+        "icons": "node build/make-icon.js",
+        "i18n:check": "node build/check-i18n.js"
     },
     "build": {
         "appId": "vn.snapask.desktop",
         "productName": "SnapAsk",
+        "artifactName": "SnapAsk-${version}-${os}-${arch}.${ext}",
         "directories": {
             "output": "dist",
             "buildResources": "build"
@@ -23,13 +27,33 @@
         ],
         "win": {
             "target": [
-                "nsis"
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
             ],
-            "icon": "src/assets/icon.png"
+            "icon": "build/icon.ico"
         },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true
+        "mac": {
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "universal"
+                    ]
+                }
+            ],
+            "icon": "build/icon.icns",
+            "category": "public.app-category.productivity",
+            "hardenedRuntime": true,
+            "entitlements": "build/entitlements.mac.plist",
+            "entitlementsInherit": "build/entitlements.mac.plist",
+            "extendInfo": {
+                "NSScreenCaptureUsageDescription": "SnapAsk cần quyền ghi màn hình để chụp vùng bạn chọn.",
+                "LSUIElement": true
+            }
         }
     },
     "devDependencies": {

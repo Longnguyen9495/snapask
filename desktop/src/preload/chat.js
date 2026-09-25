@@ -16,4 +16,9 @@ contextBridge.exposeInMainWorld('snapask', {
   openManagement: () => ipcRenderer.invoke('app:open-management'),
   settings: () => ipcRenderer.invoke('settings:read'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:write', patch),
+
+  // Ngôn ngữ: renderer hỏi một lần lúc mở, rồi nghe tiếp mỗi lần người dùng đổi.
+  locale: () => ipcRenderer.invoke('app:locale'),
+  setLocale: (locale) => ipcRenderer.invoke('app:set-locale', locale),
+  onLocale: (handler) => ipcRenderer.on('app:locale', (event, payload) => handler(payload)),
 });

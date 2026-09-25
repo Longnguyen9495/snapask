@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Tạo tài khoản · SnapAsk')
-@section('description', 'Tạo tài khoản SnapAsk, dùng thử miễn phí.')
+@section('title', __('Create account · SnapAsk'))
+@section('description', __('Create a SnapAsk account and try it free.'))
 @section('wrap-modifier', 'wrap--narrow')
 
 @section('content')
-  <h1>Tạo tài khoản</h1>
-  <p class="lead">Dùng thử miễn phí, không cần thẻ.</p>
+  <h1>{{ __('Create account') }}</h1>
+  <p class="lead">{{ __('Free to try, no card required.') }}</p>
 
   <form method="POST" action="{{ route('register.store') }}" class="stack card">
     @csrf
@@ -22,29 +22,30 @@
     @endif
 
     <label>
-      Tên của bạn
+      {{ __('Your name') }}
       <input type="text" name="name" value="{{ old('name') }}" required autofocus>
     </label>
 
     <label>
-      Email
+      {{ __('Email') }}
       <input type="email" name="email" value="{{ old('email') }}" autocomplete="username" required>
     </label>
 
     <label>
-      Mật khẩu
+      {{ __('Password') }}
       <input type="password" name="password" autocomplete="new-password" required>
     </label>
 
     <label>
-      Nhập lại mật khẩu
+      {{ __('Confirm password') }}
       <input type="password" name="password_confirmation" autocomplete="new-password" required>
     </label>
 
-    <button type="submit">Tạo tài khoản</button>
+    <button type="submit">{{ __('Create account') }}</button>
   </form>
 
   <p class="note center" style="margin-top: 18px">
-    Đã có tài khoản? <a href="{{ route('login') }}" style="color: var(--accent)">Đăng nhập</a>
+    {{ __('Already have an account?') }}
+    <a href="{{ route('login') }}" style="color: var(--accent)">{{ __('Sign in') }}</a>
   </p>
 @endsection

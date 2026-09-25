@@ -37,10 +37,10 @@ class ConnectorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'slug.regex' => 'Mã rút gọn chỉ gồm chữ thường, số, gạch dưới và gạch ngang.',
-            'slug.not_regex' => 'Mã rút gọn không được có hai gạch dưới liền nhau.',
-            'slug.unique' => 'Bạn đã có một dịch vụ dùng mã rút gọn này.',
-            'url.url' => 'Địa chỉ dịch vụ phải là một URL https hợp lệ.',
+            'slug.regex' => __('The short code takes lowercase letters, digits, underscores and hyphens only.'),
+            'slug.not_regex' => __('The short code cannot contain two underscores in a row.'),
+            'slug.unique' => __('You already have a service using this short code.'),
+            'url.url' => __('The service address must be a valid https URL.'),
         ];
     }
 }

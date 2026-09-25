@@ -1,6 +1,7 @@
 'use strict';
 
 const store = require('./store');
+const i18n = require('../i18n');
 
 class ApiError extends Error {
   constructor(message, status) {
@@ -16,6 +17,9 @@ function headers(extra = {}) {
 
   return {
     Accept: 'application/json',
+    // Máy chủ dịch thông báo lỗi theo header này, nên câu "hết lượt hỏi" về tới
+    // đây đã đúng thứ tiếng người dùng đang xem.
+    'Accept-Language': i18n.getLocale(),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...extra,
   };
@@ -29,7 +33,7 @@ async function decode(response) {
     // `message` của Laravel chỉ là câu tóm tắt chung.
     const detail = Object.values(body.errors ?? {})[0]?.[0];
 
-    throw new ApiError(detail || body.message || `Máy chủ trả về lỗi ${response.status}.`, response.status);
+    throw new ApiError(detail || body.message || i18n.t('The server returned error :status.', { status: response.status }), response.status);
   }
 
   return body;
@@ -77,6 +81,18 @@ async function logout() {
 const me = async () => decode(await fetch(`${base()}/api/me`, { headers: headers() }));
 
 /**
+ * Ghi ngôn ngữ đã chọn lên tài khoản.
+ *
+ * Để cùng một người mở trang web hay mở app trên máy khác đều thấy đúng thứ
+ * tiếng họ đã chọn.
+ */
+const setLocale = async (locale) => decode(await fetch(`${base()}/api/me`, {
+  method: 'PATCH',
+  headers: headers({ 'Content-Type': 'application/json' }),
+  body: JSON.stringify({ locale }),
+}));
+
+/**
  * Gửi một lượt hỏi và đọc câu trả lời theo dòng SSE.
  *
  * `onEvent` được gọi cho từng sự kiện: {type:'delta'|'done'|'error', ...}.
@@ -101,7 +117,7 @@ async function ask({ conversationId, question, imageDataUrl }, onEvent) {
       });
     } catch (error) {
       if (error.name !== 'AbortError') {
-        onEvent({ type: 'error', message: 'Không kết nối được máy chủ SnapAsk.' });
+        onEvent({ type: 'error', message: i18n.t('Could not reach the SnapAsk server.') });
       }
 
       return;
@@ -112,7 +128,7 @@ async function ask({ conversationId, question, imageDataUrl }, onEvent) {
       onEvent({
         type: 'error',
         status: response.status,
-        message: body.message || `Máy chủ trả về lỗi ${response.status}.`,
+        message: body.message || i18n.t('The server returned error :status.', { status: response.status }),
       });
 
       return;
@@ -161,4 +177,4 @@ async function ask({ conversationId, question, imageDataUrl }, onEvent) {
   return () => controller.abort();
 }
 
-module.exports = { login, register, logout, me, ask, ApiError };
+module.exports = { login, register, logout, me, setLocale, ask, ApiError };

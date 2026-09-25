@@ -68,7 +68,7 @@ class ConnectorPageController extends Controller
 
         return redirect()
             ->route('web.connectors.index')
-            ->with('status', 'Đã xoá dịch vụ.');
+            ->with('status', __('Service deleted.'));
     }
 
     /**
@@ -78,9 +78,11 @@ class ConnectorPageController extends Controller
     private function outcome(McpConnector $connector): string
     {
         if ($connector->last_error !== null) {
-            return 'Đã lưu, nhưng chưa kết nối được: '.$connector->last_error;
+            return __('Saved, but could not connect: :error', ['error' => $connector->last_error]);
         }
 
-        return sprintf('Đã kết nối %s, đọc được %d công cụ.', $connector->name, count($connector->tools ?? []));
+        $count = count($connector->tools ?? []);
+
+        return trans_choice('Connected :name, read :count tool.|Connected :name, read :count tools.', $count, ['name' => $connector->name, 'count' => $count]);
     }
 }

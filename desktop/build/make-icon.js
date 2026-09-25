@@ -11,9 +11,11 @@ const zlib = require('node:zlib');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const BG = [17, 19, 26, 255];
-const ACCENT = [108, 140, 255, 255];
-const DOT = [232, 235, 242, 255];
+// Cùng hệ màu với ứng dụng và trang web: nền đen ngả ấm, một màu nhấn hổ phách.
+// Lý do chọn đã ghi trong README, mục Hệ thiết kế.
+const BG = [26, 24, 22, 255];       // --ink-1  #1a1816
+const ACCENT = [227, 160, 75, 255]; // --accent #e3a04b
+const DOT = [243, 239, 232, 255];   // --text   #f3efe8
 
 function draw(size) {
   const pixels = Buffer.alloc(size * size * 4);
@@ -129,10 +131,113 @@ function crc32(buffer) {
   return (crc ^ -1) >>> 0;
 }
 
+/**
+ * Icon khay đơn sắc cho thanh menu macOS.
+ *
+ * macOS tự tô lại ảnh template theo nền sáng hay tối, nên nó chỉ đọc kênh alpha
+ * — mọi màu trong ảnh đều bị bỏ. Vẽ đen đặc rồi để hệ điều hành lo phần còn lại.
+ */
+function drawTemplate(size) {
+  const pixels = draw(size);
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const alpha = pixels[i + 3];
+
+    // Nền của icon thường là chỗ đáng lẽ phải trong suốt trên thanh menu.
+    const isBackground = alpha > 0
+      && pixels[i] === BG[0] && pixels[i + 1] === BG[1] && pixels[i + 2] === BG[2];
+
+    pixels[i] = 0;
+    pixels[i + 1] = 0;
+    pixels[i + 2] = 0;
+    pixels[i + 3] = isBackground ? 0 : alpha;
+  }
+
+  return pixels;
+}
+
+/**
+ * Gói nhiều ảnh PNG thành một file .ico.
+ *
+ * Bộ cài Windows cần .ico; electron-builder không tự dựng được từ PNG khi thiếu
+ * thư viện ảnh, nên ghép tay ở đây — định dạng này chỉ là một bảng mục lục đơn
+ * giản đặt trước các ảnh PNG nguyên vẹn.
+ */
+function ico(sizes) {
+  const images = sizes.map((size) => encode(size, draw(size)));
+
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);            // để trống
+  header.writeUInt16LE(1, 2);            // 1 = icon
+  header.writeUInt16LE(sizes.length, 4);
+
+  let offset = 6 + sizes.length * 16;
+
+  const entries = sizes.map((size, i) => {
+    const entry = Buffer.alloc(16);
+    entry[0] = size >= 256 ? 0 : size;   // 0 nghĩa là 256
+    entry[1] = size >= 256 ? 0 : size;
+    entry[4] = 1;                        // số mặt phẳng màu
+    entry.writeUInt16LE(32, 6);          // bit mỗi điểm ảnh
+    entry.writeUInt32LE(images[i].length, 8);
+    entry.writeUInt32LE(offset, 12);
+    offset += images[i].length;
+
+    return entry;
+  });
+
+  return Buffer.concat([header, ...entries, ...images]);
+}
+
+/**
+ * Gói nhiều ảnh PNG thành một file .icns cho macOS.
+ *
+ * Mỗi ảnh là một khối có mã bốn ký tự nói rõ kích thước; bảng dưới đây là những
+ * mã mà Finder và Dock thực sự đọc.
+ */
+function icns(entries) {
+  const blocks = entries.map(([type, size]) => {
+    const png = encode(size, draw(size));
+    const header = Buffer.alloc(8);
+    header.write(type, 0, 4, 'ascii');
+    header.writeUInt32BE(png.length + 8, 4);
+
+    return Buffer.concat([header, png]);
+  });
+
+  const body = Buffer.concat(blocks);
+  const header = Buffer.alloc(8);
+  header.write('icns', 0, 4, 'ascii');
+  header.writeUInt32BE(body.length + 8, 4);
+
+  return Buffer.concat([header, body]);
+}
+
+const assets = path.join(__dirname, '..', 'src', 'assets');
+
 for (const [name, size] of [['icon.png', 256], ['tray.png', 32]]) {
   // Vào src/ chứ không phải build/: buildResources không được gói vào asar,
   // nên icon để ở đó thì lúc chạy thật không tìm thấy.
-  const file = path.join(__dirname, "..", "src", "assets", name);
+  const file = path.join(assets, name);
   fs.writeFileSync(file, encode(size, draw(size)));
   console.log(`${name} (${size}px)`);
 }
+
+// Thanh menu macOS cần ảnh template, kèm bản @2x cho màn Retina.
+for (const [name, size] of [['trayTemplate.png', 22], ['trayTemplate@2x.png', 44]]) {
+  fs.writeFileSync(path.join(assets, name), encode(size, drawTemplate(size)));
+  console.log(`${name} (${size}px)`);
+}
+
+/*
+ * Icon của bộ cài nằm trong build/: electron-builder đọc chúng lúc đóng gói,
+ * còn lúc chạy thì không ai cần tới.
+ */
+fs.writeFileSync(path.join(__dirname, 'icon.ico'), ico([16, 24, 32, 48, 64, 128, 256]));
+console.log('icon.ico (16–256px)');
+
+fs.writeFileSync(path.join(__dirname, 'icon.icns'), icns([
+  ['icp4', 16], ['icp5', 32], ['icp6', 64],
+  ['ic07', 128], ['ic08', 256], ['ic09', 512],
+]));
+console.log('icon.icns (16–512px)');

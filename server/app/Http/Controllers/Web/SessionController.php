@@ -27,7 +27,7 @@ class SessionController extends Controller
             // Một thông báo chung cho cả email sai lẫn mật khẩu sai, để không
             // biến biểu mẫu đăng nhập thành công cụ dò xem email nào có thật.
             throw ValidationException::withMessages([
-                'email' => 'Email hoặc mật khẩu không đúng.',
+                'email' => __('auth.failed'),
             ]);
         }
 

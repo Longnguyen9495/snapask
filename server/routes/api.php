@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\RegisterController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 
 /*
  * Ứng dụng desktop nói chuyện với máy chủ qua đúng các tuyến này. Khoá của nhà
@@ -26,10 +27,31 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('me', function (Request $request) {
         return response()->json([
-            'user' => $request->user()->only(['id', 'name', 'email']),
+            // `locale` đi kèm để ứng dụng desktop mở lên đúng thứ tiếng người
+            // dùng đã chọn, kể cả khi họ chọn trên trang web.
+            'user' => $request->user()->only(['id', 'name', 'email', 'locale']),
             'quota' => $request->user()->quotaSummary(),
         ]);
     })->name('me');
+
+    /*
+     * Ghi lựa chọn ngôn ngữ từ ứng dụng desktop.
+     *
+     * Chỉ nhận đúng một trường: đây là chỗ để đổi ngôn ngữ, không phải một cửa
+     * chung cho mọi thứ thuộc về hồ sơ người dùng.
+     */
+    Route::patch('me', function (Request $request) {
+        $data = $request->validate([
+            'locale' => ['required', 'string', Rule::in(array_keys(config('snapask.locales')))],
+        ]);
+
+        $request->user()->forceFill($data)->save();
+
+        return response()->json([
+            'user' => $request->user()->only(['id', 'name', 'email', 'locale']),
+            'quota' => $request->user()->quotaSummary(),
+        ]);
+    })->name('me.update');
 
     Route::post('ask', AskController::class)
         ->middleware('throttle:20,1')

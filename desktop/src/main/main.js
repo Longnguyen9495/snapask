@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, shell, screen, nativeImage, clipboard, ClipboardItem, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, shell, screen, nativeImage, clipboard, ClipboardItem, dialog, systemPreferences } = require('electron');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -9,6 +9,9 @@ const config = require('./config');
 const store = require('./store');
 const capture = require('./capture');
 const api = require('./api');
+const i18n = require('../i18n');
+
+const t = i18n.t;
 
 let tray = null;
 let chatWindow = null;
@@ -74,6 +77,38 @@ function placeChatNear(rect) {
   win.setPosition(Math.round(x), Math.round(y));
 }
 
+/**
+ * Quyền ghi màn hình trên macOS.
+ *
+ * Chưa được cấp thì `desktopCapturer` vẫn chạy nhưng trả về ảnh đen, nên phải
+ * chặn trước và chỉ đường, bằng không người dùng ngồi nhìn một khung đen mà
+ * không hiểu mình làm sai ở đâu.
+ *
+ * macOS chỉ đọc lại danh sách quyền lúc tiến trình khởi động, nên cấp xong phải
+ * mở lại ứng dụng — câu hướng dẫn nói thẳng điều đó.
+ */
+async function ensureScreenAccess() {
+  if (process.platform !== 'darwin') return true;
+
+  if (systemPreferences.getMediaAccessStatus('screen') === 'granted') return true;
+
+  const { response } = await dialog.showMessageBox({
+    type: 'info',
+    title: 'SnapAsk',
+    message: t('Screen recording permission is needed'),
+    detail: t('SnapAsk needs screen recording permission to capture the region you select. Open System Settings › Privacy & Security › Screen Recording, tick SnapAsk, then start the app again.'),
+    buttons: [t('Open System Settings'), t('Hide')],
+    defaultId: 0,
+    cancelId: 1,
+  });
+
+  if (response === 0) {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+  }
+
+  return false;
+}
+
 async function startCapture() {
   if (capture.isOpen()) return;
 
@@ -81,6 +116,8 @@ async function startCapture() {
     openAuthWindow();
     return;
   }
+
+  if (!await ensureScreenAccess()) return;
 
   if (chatWindow && !chatWindow.isDestroyed()) chatWindow.hide();
 
@@ -142,33 +179,103 @@ function registerHotkey() {
     dialog.showMessageBox({
       type: 'warning',
       title: 'SnapAsk',
-      message: `Không đăng ký được phím tắt ${hotkey}.`,
-      detail: 'Một phần mềm khác đang giữ tổ hợp phím này. Hãy tắt phần mềm đó rồi mở lại SnapAsk.',
+      message: t('Could not register the hotkey :hotkey.', { hotkey }),
+      detail: t('Another program is holding this key combination. Close it, then start SnapAsk again.'),
     });
   }
 
   return ok;
 }
 
+/**
+ * Icon cho khay hệ thống.
+ *
+ * macOS cần ảnh template đơn sắc để tự tô lại theo thanh menu sáng hay tối;
+ * Windows và Linux thì dùng icon màu như thường.
+ */
+function trayIcon() {
+  if (process.platform !== 'darwin') {
+    return nativeImage.createFromPath(assetFile('tray.png'));
+  }
+
+  const image = nativeImage.createFromPath(assetFile('trayTemplate.png'));
+  image.setTemplateImage(true);
+
+  return image;
+}
+
 function buildTray() {
   // Windows từ chối tạo khay hệ thống với ảnh rỗng, nên icon phải là file thật.
-  tray = new Tray(nativeImage.createFromPath(assetFile('tray.png')));
+  tray = new Tray(trayIcon());
   tray.setToolTip('SnapAsk');
-
-  // Phím tắt đã cố định nên menu này không bao giờ phải dựng lại.
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: `Chụp và hỏi (${config.hotkey()})`, click: () => startCapture() },
-    { type: 'separator' },
-    { label: 'Tài khoản…', click: () => openAuthWindow() },
-    { label: 'Mở trang quản lý', click: () => shell.openExternal(managementUrl()) },
-    { type: 'separator' },
-    { label: 'Thoát', click: () => app.quit() },
-  ]));
+  rebuildTrayMenu();
 
   tray.on('double-click', () => startCapture());
 }
 
+/**
+ * Dựng lại menu khay.
+ *
+ * Phải dựng lại được chứ không dựng một lần như trước: đổi ngôn ngữ thì menu
+ * này cũng phải đổi theo, mà Electron không cho sửa nhãn của một menu đã tạo.
+ */
+function rebuildTrayMenu() {
+  if (!tray || tray.isDestroyed()) return;
+
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: t('Snap and ask (:hotkey)', { hotkey: config.hotkey() }), click: () => startCapture() },
+    { type: 'separator' },
+    { label: t('Account…'), click: () => openAuthWindow() },
+    { label: t('Open the management page'), click: () => shell.openExternal(managementUrl()) },
+    { type: 'separator' },
+    { label: t('Quit'), click: () => app.quit() },
+  ]));
+}
+
+/**
+ * Ngôn ngữ lúc khởi động, theo thứ tự người dùng nói rõ ý nhất:
+ *
+ *   1. lựa chọn đã lưu trong snapask.json — họ tự bấm chọn trong app;
+ *   2. ngôn ngữ của hệ điều hành — phỏng đoán hợp lý cho lần chạy đầu.
+ *
+ * `users.locale` từ máy chủ được áp sau, lúc `auth:state` trả về, vì tới lúc đó
+ * mới biết người dùng là ai.
+ */
+function resolveStartupLocale() {
+  const saved = store.read().locale;
+
+  if (i18n.supported(saved)) return i18n.setLocale(saved);
+
+  return i18n.setLocale(i18n.normalise(app.getLocale()) ?? 'vi');
+}
+
+/**
+ * Đổi ngôn ngữ và dựng lại những gì đã vẽ bằng ngôn ngữ cũ.
+ *
+ * Menu khay phải dựng lại, còn các cửa sổ tự nghe `app:locale` rồi thay chữ
+ * tại chỗ, nên không cửa sổ nào phải tải lại.
+ */
+function applyLocale(locale, { persist = true } = {}) {
+  const applied = i18n.setLocale(locale);
+
+  if (persist) store.write({ locale: applied });
+
+  rebuildTrayMenu();
+
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send('app:locale', { locale: applied, dictionary: i18n.dictionary() });
+  }
+
+  return applied;
+}
+
 app.whenReady().then(() => {
+  resolveStartupLocale();
+
+  // Ứng dụng sống ở khay hệ thống, không phải ở Dock: một icon Dock cho thứ
+  // không có cửa sổ chính chỉ tổ chiếm chỗ.
+  if (process.platform === 'darwin') app.dock?.hide();
+
   buildTray();
   registerHotkey();
 
@@ -221,9 +328,9 @@ app.whenReady().then(() => {
     // Hộp thoại phải gắn vào chính lớp phủ, nếu không nó hiện phía sau lớp phủ
     // luôn-trên-cùng và người dùng tưởng phần mềm treo.
     const { canceled, filePath } = await dialog.showSaveDialog(overlay, {
-      title: 'Lưu ảnh chụp',
+      title: t('Save the screenshot'),
       defaultPath: path.join(app.getPath('pictures'), `SnapAsk ${stamp}.png`),
-      filters: [{ name: 'Ảnh PNG', extensions: ['png'] }],
+      filters: [{ name: t('PNG image'), extensions: ['png'] }],
     });
 
     if (canceled || !filePath) return false;
@@ -268,12 +375,35 @@ app.whenReady().then(() => {
     if (!store.getToken()) return { authenticated: false };
 
     try {
-      return { authenticated: true, ...(await api.me()) };
+      const state = await api.me();
+
+      /*
+       * Ngôn ngữ đã chọn trên trang web theo người dùng về tới đây — nhưng chỉ
+       * khi họ chưa tự chọn trong app. Lựa chọn tại chỗ bao giờ cũng thắng, vì
+       * đó là cái họ vừa bấm trên chính máy này.
+       */
+      if (!i18n.supported(store.read().locale) && i18n.supported(state.user?.locale)) {
+        applyLocale(state.user.locale, { persist: false });
+      }
+
+      return { authenticated: true, ...state };
     } catch (error) {
       if (error.status === 401) store.setToken(null);
 
       return { authenticated: false, message: error.message };
     }
+  });
+
+  ipcMain.handle('app:locale', () => ({ locale: i18n.getLocale(), dictionary: i18n.dictionary() }));
+
+  ipcMain.handle('app:set-locale', async (event, locale) => {
+    const applied = applyLocale(locale);
+
+    // Gửi lên máy chủ để cùng một tài khoản mở trên máy khác cũng đúng thứ
+    // tiếng. Hỏng thì cũng không sao: lựa chọn đã nằm trong snapask.json rồi.
+    if (store.getToken()) await api.setLocale(applied).catch(() => {});
+
+    return applied;
   });
 
   // Việc khai báo dịch vụ cho AI tra cứu nằm trên trang web của máy chủ, nên

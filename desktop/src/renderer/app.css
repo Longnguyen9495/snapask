@@ -234,6 +234,19 @@ body {
 }
 .auth__ghost:hover { color: var(--text); border-color: var(--line); }
 
+/*
+ * Chọn ngôn ngữ, ở cuối cửa sổ Tài khoản.
+ *
+ * Hai nút cạnh nhau chứ không phải một nút bật tắt: người đang đọc sai thứ
+ * tiếng thì nhìn thấy đúng chữ "Tiếng Việt" hoặc "English" mới biết bấm vào đâu.
+ */
+.auth__lang { display: flex; gap: 8px; margin-top: 22px; }
+.auth__lang .auth__ghost { flex: 1; }
+.auth__lang .auth__ghost--on {
+  color: var(--accent-ink); background: var(--accent); border-color: var(--accent);
+}
+.auth__lang .auth__ghost--on:hover { color: var(--accent-ink); background: var(--accent-press); }
+
 .auth__error {
   padding: 10px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--danger);
   background: color-mix(in srgb, var(--danger) 12%, transparent);

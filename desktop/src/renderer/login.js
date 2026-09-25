@@ -13,15 +13,17 @@ const field = (id) => document.getElementById(id);
 /** 'login' hoặc 'register' — quyết định hiện ô nào và gọi API nào. */
 let mode = 'login';
 
+// Khoá dịch chứ không phải câu đã dịch: đổi ngôn ngữ thì setMode() chạy lại và
+// lấy đúng bản mới, không phải dựng lại bảng này.
 const COPY = {
   login: {
-    lead: 'Chụp một vùng màn hình, hỏi AI ngay tại chỗ.',
-    submit: 'Đăng nhập',
+    lead: 'Snap a region of your screen and ask AI right there.',
+    submit: 'Sign in',
     passwordAutocomplete: 'current-password',
   },
   register: {
-    lead: 'Tạo tài khoản dùng thử, không cần thẻ.',
-    submit: 'Tạo tài khoản',
+    lead: 'Create a trial account, no card required.',
+    submit: 'Create account',
     passwordAutocomplete: 'new-password',
   },
 };
@@ -37,8 +39,8 @@ function setMode(next) {
   mode = next;
   const copy = COPY[mode];
 
-  lead.textContent = copy.lead;
-  submit.textContent = copy.submit;
+  lead.textContent = window.i18n.t(copy.lead);
+  submit.textContent = window.i18n.t(copy.submit);
   field('password').autocomplete = copy.passwordAutocomplete;
 
   // Ô chỉ dùng khi đăng ký vừa phải ẩn vừa phải thôi bắt buộc, nếu không trình
@@ -69,10 +71,14 @@ async function refresh() {
 
   if (!state.authenticated) return;
 
-  document.getElementById('who').textContent = `Đang đăng nhập: ${state.user?.email ?? ''}`;
+  document.getElementById('who').textContent = window.i18n.t('Signed in as :email', { email: state.user?.email ?? '' });
   document.getElementById('quota').textContent = state.quota?.own_key
-    ? `Gói ${state.quota.plan} · dùng khoá riêng, không giới hạn lượt`
-    : `Gói ${state.quota.plan} · còn ${state.quota.remaining}/${state.quota.limit} lượt hỏi trong tháng`;
+    ? window.i18n.t(':plan plan · your own key, no ask limit', { plan: state.quota.plan })
+    : window.i18n.t(':plan plan · :remaining of :limit asks left this month', {
+      plan: state.quota.plan,
+      remaining: state.quota.remaining,
+      limit: state.quota.limit,
+    });
 }
 
 form.addEventListener('submit', async (event) => {
@@ -85,7 +91,7 @@ form.addEventListener('submit', async (event) => {
   if (mode === 'register' && password !== field('password2').value) {
     // Bắt ngay tại chỗ: một vòng lên máy chủ chỉ để báo gõ lệch mật khẩu là
     // khoảng chờ vô ích.
-    show(error, 'Hai lần nhập mật khẩu không giống nhau.');
+    show(error, window.i18n.t('The two passwords do not match.'));
     return;
   }
 
@@ -118,7 +124,9 @@ document.querySelector('.socials').addEventListener('click', (event) => {
 
   // Giao diện dựng trước, phần nối thật với nhà cung cấp làm sau. Nói thẳng ra
   // còn hơn để nút bấm vào không có gì xảy ra.
-  show(socialNote, `Đăng nhập bằng ${PROVIDER_NAMES[button.dataset.provider]} sẽ có ở bản tới.`);
+  show(socialNote, window.i18n.t('Sign in with :provider is coming in the next release.', {
+    provider: PROVIDER_NAMES[button.dataset.provider],
+  }));
 });
 
 document.getElementById('manage').addEventListener('click', () => {
@@ -127,6 +135,30 @@ document.getElementById('manage').addEventListener('click', () => {
 
 document.getElementById('logout').addEventListener('click', async () => {
   await window.snapask.logout();
+  refresh();
+});
+
+/*
+ * Đổi ngôn ngữ tại chỗ.
+ *
+ * Dịch lại cả những chữ do JS dựng ra — nhãn nút, dòng hạn mức — vì `data-i18n`
+ * chỉ với tới được phần nằm sẵn trong HTML.
+ */
+for (const locale of ['vi', 'en']) {
+  document.getElementById(`lang-${locale}`).addEventListener('click', () => {
+    window.i18n.setLocale(locale);
+  });
+}
+
+function markActiveLocale(locale) {
+  for (const one of ['vi', 'en']) {
+    document.getElementById(`lang-${one}`).classList.toggle('auth__ghost--on', one === locale);
+  }
+}
+
+window.i18n.start((locale) => {
+  markActiveLocale(locale);
+  setMode(mode);
   refresh();
 });
 

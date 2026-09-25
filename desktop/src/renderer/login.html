@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
-<title>SnapAsk · Tài khoản</title>
+<title data-i18n="SnapAsk · Account">SnapAsk · Tài khoản</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body class="auth">
@@ -19,40 +19,41 @@
   </header>
 
   <section id="guest">
-    <p class="auth__lead" id="lead">Chụp một vùng màn hình, hỏi AI ngay tại chỗ.</p>
+    <p class="auth__lead" id="lead" data-i18n="Snap a region of your screen and ask AI right there.">Chụp một vùng màn hình, hỏi AI ngay tại chỗ.</p>
 
     <div class="tabs" role="tablist">
-      <button type="button" class="tabs__tab tabs__tab--on" data-mode="login" role="tab">Đăng nhập</button>
-      <button type="button" class="tabs__tab" data-mode="register" role="tab">Đăng ký</button>
+      <button type="button" class="tabs__tab tabs__tab--on" data-mode="login" role="tab" data-i18n="Sign in">Đăng nhập</button>
+      <button type="button" class="tabs__tab" data-mode="register" role="tab" data-i18n="Sign up">Đăng ký</button>
     </div>
 
     <form id="form" class="auth__form">
       <label class="only-register">
-        Tên của bạn
-        <input id="name" type="text" autocomplete="name" placeholder="Nguyễn Văn A">
+        <span data-i18n="Your name">Tên của bạn</span>
+        <input id="name" type="text" autocomplete="name" placeholder="Nguyễn Văn A"
+               data-i18n-placeholder="Nguyen Van A">
       </label>
 
       <label>
-        Email
+        <span data-i18n="Email">Email</span>
         <input id="email" type="email" autocomplete="username" required>
       </label>
 
       <label>
-        Mật khẩu
+        <span data-i18n="Password">Mật khẩu</span>
         <input id="password" type="password" autocomplete="current-password" required>
       </label>
 
       <label class="only-register">
-        Nhập lại mật khẩu
+        <span data-i18n="Confirm password">Nhập lại mật khẩu</span>
         <input id="password2" type="password" autocomplete="new-password">
       </label>
 
       <p id="error" class="auth__error" hidden></p>
 
-      <button id="submit" type="submit">Đăng nhập</button>
+      <button id="submit" type="submit" data-i18n="Sign in">Đăng nhập</button>
     </form>
 
-    <div class="divider"><span>hoặc tiếp tục với</span></div>
+    <div class="divider"><span data-i18n="or continue with">hoặc tiếp tục với</span></div>
 
     <div class="socials">
       <button type="button" class="social" data-provider="google">
@@ -89,18 +90,25 @@
     <p id="who" class="auth__who"></p>
     <p id="quota" class="auth__quota"></p>
 
-    <p class="auth__hotkey">Phím tắt chụp <kbd id="hotkey">Ctrl + Alt + W</kbd></p>
+    <p class="auth__hotkey"><span data-i18n="Capture hotkey">Phím tắt chụp</span> <kbd id="hotkey">Ctrl + Alt + W</kbd></p>
 
-    <h2 class="auth__heading">Dịch vụ cho AI tra cứu</h2>
-    <p class="auth__note">
+    <h2 class="auth__heading" data-i18n="Services for the AI to look up">Dịch vụ cho AI tra cứu</h2>
+    <p class="auth__note" data-i18n="Declare a service that speaks MCP so the AI reads real data instead of guessing from the screenshot. That is done on the management page.">
       Khai báo dịch vụ theo chuẩn MCP để AI đọc được dữ liệu thật, thay vì chỉ
       đoán từ ảnh chụp. Việc này làm trên trang quản lý.
     </p>
-    <button id="manage" type="button">Mở trang quản lý</button>
+    <button id="manage" type="button" data-i18n="Open the management page">Mở trang quản lý</button>
 
-    <button id="logout" type="button" class="auth__ghost">Đăng xuất</button>
+    <button id="logout" type="button" class="auth__ghost" data-i18n="Sign out">Đăng xuất</button>
   </section>
 
+  <!-- Nút ngôn ngữ nằm ngoài hai khối trên: dùng được cả lúc chưa đăng nhập. -->
+  <div class="auth__lang">
+    <button type="button" class="auth__ghost" id="lang-vi" lang="vi">Tiếng Việt</button>
+    <button type="button" class="auth__ghost" id="lang-en" lang="en">English</button>
+  </div>
+
+  <script src="i18n.js"></script>
   <script src="login.js"></script>
 </body>
 </html>

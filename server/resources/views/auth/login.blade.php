@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Đăng nhập · SnapAsk')
-@section('description', 'Đăng nhập SnapAsk để quản lý dịch vụ đã kết nối.')
+@section('title', __('Sign in · SnapAsk'))
+@section('description', __('Sign in to SnapAsk to manage your connected services.'))
 @section('wrap-modifier', 'wrap--narrow')
 
 @section('content')
-  <h1>Đăng nhập</h1>
-  <p class="lead">Quản lý dịch vụ đã kết nối và xem hạn mức của bạn.</p>
+  <h1>{{ __('Sign in') }}</h1>
+  <p class="lead">{{ __('Manage connected services and check your quota.') }}</p>
 
   <form method="POST" action="{{ route('login.store') }}" class="stack card">
     @csrf
@@ -22,24 +22,25 @@
     @endif
 
     <label>
-      Email
+      {{ __('Email') }}
       <input type="email" name="email" value="{{ old('email') }}" autocomplete="username" required autofocus>
     </label>
 
     <label>
-      Mật khẩu
+      {{ __('Password') }}
       <input type="password" name="password" autocomplete="current-password" required>
     </label>
 
     <label class="inline">
       <input type="checkbox" name="remember" value="1">
-      Ghi nhớ trên máy này
+      {{ __('Remember me on this device') }}
     </label>
 
-    <button type="submit">Đăng nhập</button>
+    <button type="submit">{{ __('Sign in') }}</button>
   </form>
 
   <p class="note center" style="margin-top: 18px">
-    Chưa có tài khoản? <a href="{{ route('register') }}" style="color: var(--accent)">Tạo tài khoản</a>
+    {{ __('No account yet?') }}
+    <a href="{{ route('register') }}" style="color: var(--accent)">{{ __('Create account') }}</a>
   </p>
 @endsection

@@ -23,10 +23,10 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Hãy nhập tên của bạn.',
-            'email.unique' => 'Email này đã có tài khoản.',
-            'password.confirmed' => 'Hai lần nhập mật khẩu không giống nhau.',
-            'password.min' => 'Mật khẩu cần ít nhất 8 ký tự.',
+            'name.required' => __('Enter your name.'),
+            'email.unique' => __('That email already has an account.'),
+            'password.confirmed' => __('The two passwords do not match.'),
+            'password.min' => __('Password needs at least 8 characters.'),
         ];
     }
 }

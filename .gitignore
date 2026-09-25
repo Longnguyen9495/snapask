@@ -13,3 +13,7 @@ vendor/
 
 .DS_Store
 Thumbs.db
+
+# Symlink do trình cài skill tạo, trỏ bằng đường dẫn tuyệt đối của máy này nên
+# commit vào là hỏng ở máy khác. Skill thật nằm trong .agents/skills/.
+.claude/

@@ -44,7 +44,7 @@ function addMessage(role, text = '') {
 
 function setBusy(busy) {
   send.disabled = busy;
-  send.textContent = busy ? '…' : 'Hỏi';
+  send.textContent = busy ? '…' : window.i18n.t('Ask');
 }
 
 window.snapask.onCapture((payload) => {
@@ -132,7 +132,7 @@ window.snapask.onEvent((event) => {
     if (streaming) streaming.node.classList.remove('msg--typing');
 
     streaming = null;
-    addMessage('error', event.message || 'Có lỗi xảy ra.');
+    addMessage('error', event.message || window.i18n.t('An error occurred.'));
     setBusy(false);
   }
 });
@@ -185,3 +185,12 @@ document.getElementById('recapture').addEventListener('click', () => {
   window.snapask.stop();
   window.snapask.recapture();
 });
+
+/*
+ * Nạp từ điển rồi dịch cửa sổ.
+ *
+ * Nhãn nút Hỏi do JS dựng nên phải vẽ lại tay mỗi lần đổi ngôn ngữ; phần còn
+ * lại đã có data-i18n lo. Trạng thái bận đọc thẳng từ nút, vì đó là nơi duy
+ * nhất nó được lưu.
+ */
+window.i18n.start(() => setBusy(send.disabled));

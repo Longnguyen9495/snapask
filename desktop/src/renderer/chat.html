@@ -10,28 +10,29 @@
   <header class="bar">
     <span class="bar__title">SnapAsk</span>
     <div class="bar__actions">
-      <button id="recapture" class="icon" title="Chụp vùng khác">⧉</button>
+      <button id="recapture" class="icon" title="Chụp vùng khác" data-i18n-title="Snap another region">⧉</button>
       <button id="close" class="icon" title="Ẩn">×</button>
     </div>
   </header>
 
   <figure id="preview" class="preview" hidden>
-    <img id="preview-image" alt="Vùng màn hình vừa chụp">
+    <img id="preview-image" alt="Vùng màn hình vừa chụp" data-i18n-alt="The region you just snapped">
     <figcaption id="preview-meta"></figcaption>
   </figure>
 
   <main id="thread" class="thread">
     <div id="empty" class="empty">
       <span class="empty__key">Ctrl + Alt + W</span>
-      <p>Quét chọn một vùng màn hình, rồi hỏi bất cứ điều gì về nó.</p>
+      <p data-i18n="Select a region of the screen, then ask anything about it.">Quét chọn một vùng màn hình, rồi hỏi bất cứ điều gì về nó.</p>
     </div>
   </main>
 
   <footer class="composer">
-    <textarea id="question" rows="1" placeholder="Hỏi về vùng vừa chụp…"></textarea>
-    <button id="send" class="send">Hỏi</button>
+    <textarea id="question" rows="1" placeholder="Hỏi về vùng vừa chụp…" data-i18n-placeholder="Ask about the region you just snapped…"></textarea>
+    <button id="send" class="send" data-i18n="Ask">Hỏi</button>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
