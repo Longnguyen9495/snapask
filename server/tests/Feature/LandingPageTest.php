@@ -81,9 +81,12 @@ class LandingPageTest extends TestCase
     {
         config(['snapask.releases.builds.windows.file' => null]);
 
+        // Câu này nói cho người tải biết làm gì tiếp, không nhắc tới chuyện
+        // dựng từ mã nguồn — người dùng cuối không có mã nguồn để mà dựng.
         $this->get('/download')
             ->assertOk()
-            ->assertSee('Bản này chưa phát hành', false);
+            ->assertSee('Bản này chưa có', false)
+            ->assertDontSee('mã nguồn', false);
     }
 
     #[Test]
@@ -190,5 +193,31 @@ class LandingPageTest extends TestCase
         $this->get('/download')
             ->assertOk()
             ->assertSee(str_repeat('ab', 32), false);
+    }
+
+    #[Test]
+    public function trang_cong_khai_khong_noi_ngon_ngu_ky_thuat(): void
+    {
+        /*
+         * Người tải SnapAsk về không phải lập trình viên. Những chữ dưới đây
+         * từng nằm ngay giữa trang: chúng không giúp họ quyết định gì, chỉ làm
+         * sản phẩm trông như một bản thử nội bộ.
+         */
+        $jargon = ['ký số', 'code-signed', 'mã nguồn', 'MCP', 'checksum'];
+
+        foreach (['/', '/en', '/download'] as $path) {
+            $html = $this->get($path)->assertOk()->getContent();
+
+            // Chỉ soát chữ người dùng thật sự đọc được: bỏ thẻ, bỏ script và
+            // style đi. Tên class như `feature-card--mcp` nằm trong mã nguồn
+            // trang chứ không nằm trước mắt ai.
+            $body = substr($html, (int) strpos($html, '<body'));
+            $body = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#si', ' ', $body) ?? $body;
+            $visible = html_entity_decode(strip_tags($body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            foreach ($jargon as $word) {
+                $this->assertStringNotContainsStringIgnoringCase($word, $visible, "Trang {$path} còn chữ \"{$word}\".");
+            }
+        }
     }
 }

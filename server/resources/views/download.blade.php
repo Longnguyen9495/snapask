@@ -36,13 +36,22 @@
   .build .btn { margin-top: 22px; align-self: flex-start; }
   .build__soon { margin-top: 20px; font-size: 14px; color: var(--text-dim); text-wrap: pretty; }
 
-  /* Mã băm dài và không xuống dòng theo nghĩa nào cả — cho nó tự ngắt ở mọi ký tự. */
-  .sum {
-    margin-top: 10px; padding: 12px 14px;
+  /* Mã băm: đóng sẵn, mở ra mới thấy. Dãy 64 ký tự tự ngắt ở mọi vị trí. */
+  .sum { margin-top: 16px; font-size: 13px; }
+  .sum summary {
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 40px; color: var(--text-faint); cursor: pointer; list-style: none;
+  }
+  .sum summary::-webkit-details-marker { display: none; }
+  .sum summary::before { content: '+'; width: 12px; color: var(--accent); font-size: 15px; }
+  .sum[open] summary::before { content: '−'; }
+  .sum summary:hover { color: var(--text-dim); }
+  .sum__hint { margin-bottom: 8px; color: var(--text-faint); text-wrap: pretty; }
+  .sum code {
+    display: block; padding: 11px 13px;
     border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--ink-0);
     font: 400 12px/1.6 ui-monospace, monospace; color: var(--text-dim); word-break: break-all;
   }
-  .sum__label { display: block; margin-bottom: 4px; font-family: inherit; color: var(--text-faint); }
 
   .warn {
     margin-top: 44px; padding: 20px 22px;
@@ -90,22 +99,35 @@
             <a href="{{ route('download.file', $platform) }}" class="btn">{{ __('Download') }}</a>
 
             @if (filled($build['sha256']))
-              {{-- Bộ cài chưa ký số, nên mã băm là cách duy nhất khách tự kiểm được file. --}}
-              <p class="sum">
-                <span class="sum__label">{{ __('Checksum') }} · {{ __('Compare this against the file you downloaded.') }}</span>
-                {{ $build['sha256'] }}
-              </p>
+              {{--
+                Mã băm thu vào đây, đóng sẵn.
+
+                Phần lớn người tải về không cần tới nó và một dãy 64 ký tự nằm
+                giữa trang chỉ làm họ phân vân. Người muốn tự đối chiếu vẫn mở
+                được bằng một cú bấm.
+              --}}
+              <details class="sum">
+                <summary>{{ __('Verify the file') }}</summary>
+                <p class="sum__hint">{{ __('Optional. Compare this code with the file you downloaded to be sure it arrived intact.') }}</p>
+                <code>{{ $build['sha256'] }}</code>
+              </details>
             @endif
           @else
-            <p class="build__soon">{{ __('This build is not published yet. Run it from source in the meantime.') }}</p>
+            <p class="build__soon">{{ __('This build is not out yet. Try the other platform, or check back soon.') }}</p>
           @endif
         </article>
       @endforeach
     </div>
 
+    {{--
+      Hướng dẫn qua màn cảnh báo của hệ điều hành.
+
+      Không nhắc tới chuyện ký số: người tải về không cần biết vì sao, họ cần
+      biết bấm gì để đi tiếp. Thiếu chỉ dẫn này thì phần lớn dừng lại ở đó.
+    --}}
     <div class="warn">
-      <h2>{{ __('Why does Windows or macOS warn me when I open it?') }}</h2>
-      <p>{{ __('The installer is not code-signed yet. On Windows choose More info → Run anyway; on macOS right-click the app and choose Open.') }}</p>
+      <h2>{{ __('Windows or macOS shows a warning. What do I do?') }}</h2>
+      <p>{{ __('That warning appears for every app the system has not seen before. On Windows choose More info, then Run anyway. On macOS right-click SnapAsk and choose Open.') }}</p>
     </div>
   </section>
 @endsection

@@ -178,7 +178,8 @@
         <h3>{{ __('A magnifier for small text') }}</h3><p>{{ __('Place selection edges accurately on dense interfaces and HiDPI screens.') }}</p>
       </article>
       <article class="feature-card feature-card--mcp">
-        <div class="connector-visual" aria-hidden="true"><span>MCP</span><i></i><span>{{ __('Warehouse') }}</span></div>
+        {{-- "MCP" là tên giao thức, không nói gì với người dùng; thay bằng chính chữ SnapAsk. --}}
+        <div class="connector-visual" aria-hidden="true"><span>SnapAsk</span><i></i><span>{{ __('Warehouse') }}</span></div>
         <h3>{{ __('Connect your own services') }}</h3><p>{{ __('Let AI query real stock, orders, or appointments instead of guessing from pixels.') }}</p>
       </article>
       <article class="feature-card feature-card--key">
@@ -197,8 +198,8 @@
       </div>
       <div class="privacy__commitments" data-stagger>
         <article><span aria-hidden="true">01</span><div><h3>{{ __('Screenshots are deleted after :days days.', ['days' => config('snapask.image.retention_days')]) }}</h3><p>{{ __('Conversation text remains available; the image does not.') }}</p></div></article>
-        <article><span aria-hidden="true">02</span><div><h3>{{ __('The AI key never reaches your machine.') }}</h3><p>{{ __('Provider requests run on the server, away from the unpackable desktop app.') }}</p></div></article>
-        <article><span aria-hidden="true">03</span><div><h3>{{ __('Service tokens are encrypted at rest.') }}</h3><p>{{ __('Stored tokens are encrypted and never returned through the API.') }}</p></div></article>
+        <article><span aria-hidden="true">02</span><div><h3>{{ __('Only you can open your screenshots.') }}</h3><p>{{ __('Every time an image is viewed, SnapAsk checks it belongs to the account asking for it.') }}</p></div></article>
+        <article><span aria-hidden="true">03</span><div><h3>{{ __('Keys you save are never shown again.') }}</h3><p>{{ __('Provider keys and service tokens are stored locked, and no page or app can read them back.') }}</p></div></article>
       </div>
     </div>
   </section>
@@ -251,8 +252,8 @@
         <div class="qa__body"><p>{{ __('Screenshots are deleted automatically after :days days. Conversation text remains available in your history.', ['days' => config('snapask.image.retention_days')]) }}</p></div>
       </details>
       <details class="qa">
-        <summary>{{ __('Why does Windows or macOS warn me when I open it?') }}</summary>
-        <div class="qa__body"><p>{{ __('The installer is not code-signed yet. On Windows choose More info, then Run anyway. On macOS, right-click the app and choose Open.') }}</p></div>
+        <summary>{{ __('Windows or macOS shows a warning. What do I do?') }}</summary>
+        <div class="qa__body"><p>{{ __('That warning appears for every app the system has not seen before. On Windows choose More info, then Run anyway. On macOS right-click SnapAsk and choose Open.') }}</p></div>
       </details>
     </div>
   </section>
