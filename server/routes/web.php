@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AccountPageController;
 use App\Http\Controllers\Web\ConnectorPageController;
 use App\Http\Controllers\Web\ConversationPageController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DemoAskController;
 use App\Http\Controllers\Web\DownloadFileController;
 use App\Http\Controllers\Web\DownloadPageController;
 use App\Http\Controllers\Web\EmailVerificationController;
@@ -46,6 +47,16 @@ Route::get('download/{platform}', DownloadFileController::class)
 Route::get('updates/{file}', UpdateFileController::class)
     ->where('file', '[A-Za-z0-9._-]+')
     ->name('updates.file');
+
+/*
+ * Bản dùng thử trên trang chủ: khách hỏi AI thật mà chưa cần tài khoản.
+ *
+ * Trần ở đây là lớp ngoài cùng, chặn dội request trước khi vào tới controller;
+ * bên trong còn trần theo IP mỗi giờ và trần toàn hệ thống mỗi ngày.
+ */
+Route::post('demo/ask', DemoAskController::class)
+    ->middleware('throttle:20,1')
+    ->name('demo.ask');
 
 /*
  * Đổi ngôn ngữ. POST vì mỗi lần bấm là ghi cookie và ghi vào tài khoản; dùng GET

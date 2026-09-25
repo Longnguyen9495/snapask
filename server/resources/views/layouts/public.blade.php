@@ -6,6 +6,8 @@
 <title>@yield('title', __('SnapAsk - capture anywhere, ask right there'))</title>
 <meta name="description" content="@yield('description', __('Capture any part of your screen, ask a question, and get an AI answer right where you work.'))">
 <meta name="theme-color" content="#100f0e">
+{{-- Bản dùng thử trên trang chủ gửi câu hỏi bằng fetch, nên cần token này. --}}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 <link rel="stylesheet" href="{{ asset('fonts/fonts.css') }}">
 <link rel="stylesheet" href="{{ asset('css/tokens.css') }}">

@@ -164,4 +164,29 @@ return [
     'history_limit' => (int) env('SNAPASK_HISTORY_LIMIT', 12),
 
     'max_question_length' => (int) env('SNAPASK_MAX_QUESTION_LENGTH', 2000),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bản dùng thử trên trang chủ
+    |--------------------------------------------------------------------------
+    |
+    | Khách chưa có tài khoản hỏi AI thật ngay trên trang chủ. Đây là thứ thuyết
+    | phục hơn mọi lời quảng cáo — nhưng cũng là cửa duy nhất mở ra mô hình mà
+    | không cần đăng nhập, nên phải gác chặt.
+    |
+    | Ba lớp: trần theo IP mỗi giờ, trần toàn hệ thống mỗi ngày (chặn hoá đơn
+    | tăng vọt khi bị dội), và câu trả lời cắt ngắn để không ai dùng trang chủ
+    | thay cho tài khoản thật.
+    |
+    | `enabled` tắt được ngay mà không phải sửa mã, phòng khi cần đóng gấp.
+    |
+    */
+    'demo' => [
+        'enabled' => (bool) env('SNAPASK_DEMO_ENABLED', true),
+        'per_ip_hourly' => (int) env('SNAPASK_DEMO_PER_IP_HOURLY', 5),
+        'daily_total' => (int) env('SNAPASK_DEMO_DAILY_TOTAL', 400),
+        'max_question_length' => (int) env('SNAPASK_DEMO_MAX_QUESTION', 200),
+        'max_output_tokens' => (int) env('SNAPASK_DEMO_MAX_OUTPUT_TOKENS', 700),
+        'timeout' => (int) env('SNAPASK_DEMO_TIMEOUT', 45),
+    ],
 ];

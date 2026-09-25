@@ -22,24 +22,47 @@ class LandingPageTest extends TestCase
     }
 
     #[Test]
-    public function landing_co_ban_thu_tuong_tac_khong_can_tai_du_lieu_len(): void
+    public function landing_co_ban_thu_tuong_tac_voi_ba_man_hinh_mau(): void
     {
+        /*
+         * Ba cảnh cho ba kiểu người. Bản trước chỉ có một đoạn mã lỗi, nên ai
+         * không lập trình nhìn vào không thấy mình trong đó — mà phần lớn khách
+         * của SnapAsk không lập trình.
+         */
         $this->get('/')
             ->assertOk()
             ->assertSee('id="try"', false)
             ->assertSee('data-try-demo', false)
             ->assertSee('data-demo-screen', false)
             ->assertSee('data-demo-form', false)
-            ->assertSee('data-meaning-title=', false)
-            ->assertSee('data-demo-answer-title', false)
-            ->assertSee('Câu trả lời mô phỏng')
-            ->assertSee('Không có dữ liệu nào được tải lên');
+            ->assertSee('data-scene-tab="invoice"', false)
+            ->assertSee('data-scene-tab="report"', false)
+            ->assertSee('data-scene-tab="code"', false)
+            ->assertSee('Một hoá đơn')
+            ->assertSee('Một báo cáo doanh thu')
+            ->assertSee('Một thông báo lỗi')
+            // Gợi ý câu hỏi và địa chỉ gửi câu hỏi phải có mặt trong trang.
+            ->assertSee('data-demo-chips', false)
+            ->assertSee(route('demo.ask'), false)
+            ->assertSee('id="demo-data"', false);
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('Try the workflow yourself.')
-            ->assertSee('Sample answer')
-            ->assertSee('Nothing is uploaded and no account is required.');
+            ->assertSee('Try it right here. No account needed.')
+            ->assertSee('An invoice')
+            ->assertSee('A sales report');
+    }
+
+    #[Test]
+    public function tat_ban_dung_thu_thi_trang_van_chay_va_khong_moi_hoi(): void
+    {
+        config(['snapask.demo.enabled' => false]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('data-live="0"', false)
+            // Không hứa có AI thật khi bản dùng thử đang đóng.
+            ->assertDontSee('AI thật trả lời');
     }
 
     #[Test]

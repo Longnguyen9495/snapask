@@ -271,13 +271,40 @@
 .try-browser__tabs strong { margin-left: 9px; color: #afa69b; font: 500 11px/1 ui-monospace, monospace; }
 .try-code { display: grid; gap: 13px; padding: 46px 28px; color: #c7bfb3; font: 400 clamp(10px, 1.1vw, 13px)/1.55 ui-monospace, monospace; }
 .try-code > span { display: flex; gap: 18px; padding-block: 3px; white-space: nowrap; }
+
+/*
+ * Hoá đơn và bảng số liệu xếp dòng sát nhau, khác với mã nguồn.
+ *
+ * Khoảng cách 13px giữa các dòng hợp cho mã, nhưng làm một hoá đơn trông như
+ * rời rạc từng mảnh. Hai kiểu kia cũng không có cột số dòng để chừa chỗ.
+ */
+.try-code--document, .try-code--sheet { gap: 4px; padding: 34px 26px; }
+.try-code--document > span, .try-code--sheet > span { gap: 10px; }
+/*
+ * Hoá đơn và bảng căn cột bằng khoảng trắng, mà HTML co nhiều khoảng trắng
+ * thành một — để mặc định thì các cột số dính liền nhau thành một chuỗi.
+ */
+.try-code--document code, .try-code--sheet code { white-space: pre; }
+/* Dòng trống trong hoá đơn là khoảng ngắt, giữ chiều cao để nó không sập lại. */
+.try-code--document > span:has(code:empty), .try-code--sheet > span:has(code:empty) { min-height: .8em; }
 .try-code i { color: #5f5850; font-style: normal; }
 .try-code__target { margin-inline: -10px; padding-inline: 10px; background: rgba(224, 112, 92, .075); }
 .try-code p { display: grid; gap: 4px; margin: 18px 0 0 34px; padding: 13px 15px; border-left: 2px solid var(--danger); color: #aaa198; background: #211b19; white-space: normal; }
 .try-code b { color: #ec8976; }
 .try-selection { position: absolute; z-index: 3; border: 1.5px solid var(--accent); border-radius: 6px; background: rgba(227, 160, 75, .1); box-shadow: 0 0 0 9999px rgba(8, 7, 6, .58), inset 0 0 0 1px rgba(255, 230, 192, .1); pointer-events: none; }
 .try-selection:not(.is-active) { display: none; }
-.try-drag-hint { position: absolute; z-index: 2; left: 50%; bottom: 28px; padding: 8px 11px; border-radius: 8px; color: #d9d0c5; background: #2a251f; box-shadow: 0 8px 24px rgba(0,0,0,.3); transform: translateX(-50%); font-size: 12px; pointer-events: none; }
+/*
+ * Gợi ý nằm nổi ở góc dưới bên phải, không phải giữa khung.
+ *
+ * Đặt giữa thì nó che đúng phần đáng nhìn nhất — trên hoá đơn là dòng tổng
+ * thanh toán, tức thứ khách sẽ muốn khoanh chọn.
+ */
+.try-drag-hint {
+  position: absolute; z-index: 2; right: 14px; bottom: 14px;
+  padding: 7px 11px; border: 1px solid var(--line-soft); border-radius: var(--r-pill);
+  color: #d9d0c5; background: rgba(42, 37, 31, .92); backdrop-filter: blur(4px);
+  font-size: 12px; white-space: nowrap; pointer-events: none;
+}
 .try-workspace[data-step]:not([data-step="select"]) .try-drag-hint { display: none; }
 .try-assistant { display: grid; align-items: center; padding: clamp(24px, 4vw, 38px); background: #1b1815; }
 .try-assistant__empty { text-align: center; }
@@ -298,9 +325,71 @@
 .try-thinking span:nth-child(2) { animation-delay: .15s; }
 .try-thinking span:nth-child(3) { animation-delay: .3s; }
 .try-thinking p { grid-column: 1 / -1; margin-top: 8px; color: var(--text-dim); font-size: 13px; }
-.try-result { display: grid; gap: 12px; }
-.try-result code { padding: 13px; border: 1px solid #3a322a; border-radius: 10px; color: #e7bd84; background: #12100f; font: 500 11px/1.6 ui-monospace, monospace; overflow-wrap: anywhere; }
-.try-again { justify-self: start; margin-top: 5px; padding: 0 13px; }
+.try-result { display: grid; gap: 12px; align-content: start; }
+.try-result code { padding: 2px 6px; border-radius: 5px; color: #e7bd84; background: #12100f; font: 500 11.5px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }
+.try-again { justify-self: start; padding: 0 13px; }
+
+/* ============================================================
+ * Chọn màn hình mẫu
+ * ============================================================
+ *
+ * Ba cảnh cho ba kiểu người. Nút trông như thẻ tab vì chúng đúng là tab: đổi
+ * cảnh là đổi nội dung bên dưới, không phải điều hướng đi đâu cả.
+ */
+.scene-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.scene-tab {
+  min-height: 44px; padding: 10px 16px;
+  border: 1px solid var(--line-soft); border-radius: var(--r-pill);
+  color: var(--text-dim); background: transparent; cursor: pointer;
+  font: 550 13.5px/1.3 var(--font);
+  transition: color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
+}
+.scene-tab:hover { color: var(--text); border-color: var(--line); }
+.scene-tab[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+
+/* ---------- gợi ý câu hỏi ---------- */
+
+/*
+ * Rào cản lớn nhất của một bản dùng thử không phải là thao tác, mà là không
+ * biết hỏi gì. Ba gợi ý bấm một phát gỡ đúng chỗ đó.
+ */
+.try-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.try-chip {
+  min-height: 34px; padding: 7px 12px;
+  border: 1px dashed #4a4035; border-radius: var(--r-pill);
+  color: var(--text-dim); background: transparent; cursor: pointer;
+  font: 500 12.5px/1.3 var(--font); text-align: left;
+  transition: color .16s var(--ease), border-color .16s var(--ease), background .16s var(--ease);
+}
+.try-chip:hover { color: var(--text); border-style: solid; border-color: var(--accent); background: #211d19; }
+
+/* ---------- câu trả lời thật ---------- */
+
+/*
+ * Mô hình trả về markdown, nên vùng này phải biết hiện đoạn văn, danh sách,
+ * khối mã và bảng — chính bảng mới là thứ đáng khoe khi khách chụp một bảng
+ * số liệu.
+ */
+.try-answer { font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
+.try-answer > * + * { margin-top: .7em; }
+.try-answer h4 { color: var(--text); font-size: 14.5px; font-weight: 650; }
+.try-answer strong { color: var(--text); font-weight: 650; }
+.try-answer ul, .try-answer ol { padding-left: 1.3em; }
+.try-answer li + li { margin-top: .25em; }
+.try-answer pre { margin: 0; padding: 12px 13px; overflow-x: auto; border: 1px solid #3a322a; border-radius: 10px; background: #12100f; }
+.try-answer pre code { padding: 0; background: none; color: #e7bd84; font-size: 11.5px; line-height: 1.6; }
+
+.try-answer .md-table { overflow-x: auto; border: 1px solid #3a322a; border-radius: 10px; }
+.try-answer .md-table table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.try-answer .md-table th, .try-answer .md-table td { padding: 7px 10px; text-align: left; vertical-align: top; }
+.try-answer .md-table thead th { border-bottom: 1px solid #3a322a; background: #211d19; color: var(--text); font-weight: 650; white-space: nowrap; }
+.try-answer .md-table tbody tr + tr td { border-top: 1px solid #2c2620; }
+.try-answer .md-table .md-right { text-align: right; font-variant-numeric: tabular-nums; }
+.try-answer .md-table .md-center { text-align: center; }
+
+.try-result__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
+.try-cta { min-height: 40px; padding: 8px 15px; font-size: 13px; }
+.try-error { margin-top: 12px; padding: 11px 13px; border: 1px solid #6b3a30; border-radius: 10px; color: #edb8ab; background: #221512; font-size: 13px; text-wrap: pretty; }
 .try-demo__note { max-width: 70ch; margin: 16px 0 0 auto; color: var(--text-faint); font-size: 12px; text-align: right; }
 @keyframes try-pulse { to { opacity: .25; transform: translateY(-4px); } }
 

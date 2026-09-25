@@ -40,6 +40,18 @@ class ProviderResolver
             );
         }
 
+        return $this->default();
+    }
+
+    /**
+     * Nhà cung cấp mặc định của hệ thống, không gắn với người dùng nào.
+     *
+     * Bản dùng thử trên trang chủ chạy qua đây: khách chưa có tài khoản nên
+     * không có cấu hình riêng để chọn, mà cũng không nên tạo một User giả chỉ
+     * để lấy được cùng một kết quả.
+     */
+    public function default(): ResolvedProvider
+    {
         $this->guardDefaultConfigured();
 
         return new ResolvedProvider(

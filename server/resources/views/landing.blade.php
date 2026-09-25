@@ -81,32 +81,62 @@
 
   <section class="try-demo section shell reveal" id="try" aria-labelledby="try-title">
     <header class="section-heading try-demo__heading">
-      <h2 id="try-title">{{ __('Try the workflow yourself.') }}</h2>
-      <p>{{ __('This private browser demo uses a sample screen. Nothing is uploaded and no account is required.') }}</p>
+      <h2 id="try-title">{{ __('Try it right here. No account needed.') }}</h2>
+      <p>
+        @if ($demoLive)
+          {{ __('Pick a screen, drag around what you care about, and ask. A real AI answers — the same one the app uses.') }}
+        @else
+          {{ __('Pick a screen and drag around what you care about, exactly as you would in the app.') }}
+        @endif
+      </p>
     </header>
 
-    <div class="try-workspace" data-try-demo data-step="select">
+    {{--
+      Ba màn hình cho ba kiểu người.
+
+      Bản trước chỉ có một đoạn mã lỗi, nên ai không lập trình nhìn vào không
+      thấy mình trong đó — mà phần lớn khách của SnapAsk không lập trình.
+    --}}
+    <div class="scene-picker" role="tablist" aria-label="{{ __('Sample screens') }}">
+      @foreach ($scenes as $key => $scene)
+        <button type="button" class="scene-tab" role="tab" data-scene-tab="{{ $key }}"
+                id="scene-tab-{{ $key }}" aria-controls="scene-panel-{{ $key }}"
+                aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}">
+          {{ $scene['label'] }}
+        </button>
+      @endforeach
+    </div>
+
+    <div class="try-workspace" data-try-demo data-step="select"
+         data-endpoint="{{ route('demo.ask') }}" data-live="{{ $demoLive ? '1' : '0' }}">
       <div class="try-workspace__bar">
         <div>
           <strong>{{ __('Interactive demo') }}</strong>
-          <span data-demo-status aria-live="polite">{{ __('Drag around the error message below.') }}</span>
+          <span data-demo-status aria-live="polite">{{ __('Drag around what you want to ask about.') }}</span>
         </div>
         <button type="button" class="try-reset" data-demo-reset>{{ __('Start over') }}</button>
       </div>
 
       <div class="try-workspace__body">
-        <div class="try-screen" data-demo-screen tabindex="0" role="application" aria-label="{{ __('Sample screen. Drag to select the error message, or press Enter to select it with the keyboard.') }}">
-          <div class="try-browser">
-            <div class="try-browser__tabs" aria-hidden="true"><span></span><span></span><span></span><strong>orders.ts</strong></div>
-            <div class="try-code" aria-hidden="true">
-              <span><i>12</i><code>const customer = await findCustomer(input.email);</code></span>
-              <span class="try-code__target"><i>13</i><code>const total = input.items.reduce(sumPrice);</code></span>
-              <span><i>14</i><code>return db.orders.create(&#123; customer, total &#125;);</code></span>
-              <p><b>TypeError</b> Cannot read properties of undefined (reading 'reduce')</p>
+        <div class="try-screen" data-demo-screen tabindex="0" role="application"
+             aria-label="{{ __('Sample screen. Drag to select a region, or press Enter to select the highlighted part.') }}">
+          @foreach ($scenes as $key => $scene)
+            <div class="try-browser" id="scene-panel-{{ $key }}" role="tabpanel"
+                 aria-labelledby="scene-tab-{{ $key }}" data-scene-panel="{{ $key }}" @unless ($loop->first) hidden @endunless>
+              <div class="try-browser__tabs" aria-hidden="true"><span></span><span></span><span></span><strong>{{ $scene['title'] }}</strong></div>
+              <div class="try-code try-code--{{ $scene['kind'] }}" aria-hidden="true">
+                @foreach ($scene['lines'] as $line)
+                  <span @class(['try-code__target' => $line['target'] ?? false])>
+                    @if ($line['n'] !== '')<i>{{ $line['n'] }}</i>@endif
+                    <code>{{ $line['text'] }}</code>
+                  </span>
+                @endforeach
+              </div>
             </div>
-          </div>
+          @endforeach
+
           <div class="try-selection" data-demo-selection aria-hidden="true"></div>
-          <div class="try-drag-hint" aria-hidden="true">{{ __('Drag here') }}</div>
+          <div class="try-drag-hint" aria-hidden="true" data-demo-hint>{{ __('Drag here') }}</div>
         </div>
 
         <aside class="try-assistant" aria-label="{{ __('SnapAsk demo assistant') }}">
@@ -117,9 +147,16 @@
           </div>
 
           <form class="try-question" data-demo-form hidden>
-            <div class="try-preview" aria-hidden="true"><span>{{ __('Captured selection') }}</span><code>input.items.reduce(sumPrice)</code></div>
+            <div class="try-preview" aria-hidden="true"><span>{{ __('Captured selection') }}</span><code data-demo-preview></code></div>
+
             <label for="demo-question">{{ __('What do you want to know?') }}</label>
-            <textarea id="demo-question" data-demo-question rows="3" maxlength="180" placeholder="{{ __('Why can items be undefined here?') }}">{{ __('Why can items be undefined here?') }}</textarea>
+            <textarea id="demo-question" data-demo-question rows="2"
+                      maxlength="{{ config('snapask.demo.max_question_length') }}"
+                      placeholder="{{ __('Ask anything about what you selected…') }}"></textarea>
+
+            {{-- Gợi ý bấm một phát: rào cản lớn nhất của bản dùng thử là không biết hỏi gì. --}}
+            <div class="try-chips" data-demo-chips aria-label="{{ __('Example questions') }}"></div>
+
             <button class="btn" type="submit" data-demo-submit>{{ __('Ask SnapAsk') }}</button>
           </form>
 
@@ -128,30 +165,27 @@
             <p>{{ __('Reading the selected context…') }}</p>
           </div>
 
-          <div
-            class="try-result"
-            data-demo-result
-            data-meaning-title="{{ __('This error means the code cannot call reduce on an undefined value.') }}"
-            data-meaning-body="{{ __('In Vietnamese: input.items has no value, so JavaScript cannot run the reduce function on it.') }}"
-            data-cause-title="{{ __('The items field is missing from the input.') }}"
-            data-cause-body="{{ __('The caller may not have supplied items, or the data has not finished loading when this line runs.') }}"
-            data-fix-title="{{ __('Guard the input before reducing it.') }}"
-            data-fix-body="{{ __('Give items an empty-array fallback, then provide zero as the initial total for reduce.') }}"
-            data-general-title="{{ __('The selected line fails because items is undefined.') }}"
-            data-general-body="{{ __('Check where input is created, make sure items is an array, and add a safe fallback before reduce.') }}"
-            hidden
-            tabindex="-1"
-          >
-            <span class="try-result__label">{{ __('Sample answer') }}</span>
-            <h3 data-demo-answer-title>{{ __('Guard the input before reducing it.') }}</h3>
-            <p data-demo-answer-body>{{ __('Give items an empty-array fallback, then provide zero as the initial total for reduce.') }}</p>
-            <code data-demo-answer-code>const total = (input.items ?? []).reduce(sumPrice, 0);</code>
-            <button type="button" class="try-again" data-demo-reset>{{ __('Try another question') }}</button>
+          <div class="try-result" data-demo-result hidden tabindex="-1">
+            <span class="try-result__label" data-demo-result-label>{{ __('Answer') }}</span>
+            <div class="try-answer prose" data-demo-answer></div>
+            <div class="try-result__foot">
+              <button type="button" class="try-again" data-demo-reset>{{ __('Ask something else') }}</button>
+              <a href="{{ route('register') }}" class="btn btn--secondary try-cta" data-demo-cta hidden>{{ __('Keep going — create a free account') }}</a>
+            </div>
           </div>
+
+          <p class="try-error" data-demo-error role="alert" hidden></p>
         </aside>
       </div>
     </div>
-    <p class="try-demo__note">{{ __('The installed app works over every application and adds capture markup, privacy controls, and your chosen AI model.') }}</p>
+
+    <p class="try-demo__note">
+      @if ($demoLive)
+        {{ __('This demo uses sample screens. The installed app works over any window on your machine, with markup tools, privacy controls, and your own choice of AI model.') }}
+      @else
+        {{ __('The installed app works over every application and adds capture markup, privacy controls, and your chosen AI model.') }}
+      @endif
+    </p>
   </section>
 
   <section class="features section shell reveal" id="features" aria-labelledby="features-title">
@@ -260,5 +294,35 @@
 @endsection
 
 @push('scripts')
+{{--
+  Dữ liệu cho bản dùng thử: gợi ý câu hỏi, nhãn vùng chọn và chữ trạng thái,
+  đã dịch sẵn theo ngôn ngữ đang xem.
+
+  Đặt trong <script type="application/json"> nên trình duyệt đọc như dữ liệu chứ
+  không chạy như mã, và các cờ JSON_HEX_* chặn mọi ký tự có thể đóng thẻ sớm.
+--}}
+@php
+  $demoData = [
+      'scenes' => collect($scenes)->map(fn (array $scene): array => [
+          'selection' => $scene['selection'],
+          'hint' => $scene['hint'],
+          'questions' => $scene['questions'],
+          'note' => $scene['note'],
+      ])->all(),
+      'strings' => collect([
+          'Drag around what you want to ask about.',
+          'Type a question, or pick one below.',
+          'Reading the selected context…',
+          'Answer',
+          'Sample answer',
+          'Type a question first.',
+          'Something went wrong. Please try again.',
+          'Ask SnapAsk',
+          'Asking…',
+      ])->mapWithKeys(fn (string $key): array => [$key => __($key)])->all(),
+  ];
+@endphp
+<script type="application/json" id="demo-data">{!! json_encode($demoData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script src="{{ asset('js/landing.js') }}" defer></script>
+<script src="{{ asset('js/demo.js') }}" defer></script>
 @endpush
