@@ -229,5 +229,7 @@
   "You will be signed out, and your next sign-in will go to :url. Only do this if your organisation told you to.": "You will be signed out, and your next sign-in will go to :url. Only do this if your organisation told you to.",
   "Your name": "Your name",
   "Your question": "Your question",
-  "Your session has ended. Sign in again.": "Your session has ended. Sign in again."
+  "Your session has ended. Sign in again.": "Your session has ended. Sign in again.",
+  "Chart": "Chart",
+  "Table": "Table"
 }

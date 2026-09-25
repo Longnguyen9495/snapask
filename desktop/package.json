@@ -12,8 +12,9 @@
         "dist:mac": "electron-builder --mac dmg --publish never",
         "icons": "node build/make-icon.js",
         "i18n:check": "node build/check-i18n.js && node build/find-i18n-keys.js",
+        "vendor": "node build/sync-vendor.js",
         "test": "node --test \"test/*.test.js\"",
-        "check": "node build/check-syntax.js && npm run i18n:check && npm test"
+        "check": "node build/check-syntax.js && node build/sync-vendor.js --check && npm run i18n:check && npm test"
     },
     "build": {
         "appId": "vn.snapask.desktop",
@@ -75,6 +76,7 @@
         "electron-builder": "^26.15.3"
     },
     "dependencies": {
+        "chart.js": "^4.5.1",
         "electron-updater": "^6.6.2"
     }
 }

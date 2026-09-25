@@ -371,6 +371,32 @@ kbd:empty { display: none; }
 .prose hr { border: 0; border-top: 1px solid var(--line-soft); }
 .prose .md-link { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
 
+/* ---------- bảng ---------- */
+
+/*
+ * Bảng rộng hơn khung thì cuộn ngang trong chính nó, không đẩy giãn cả luồng
+ * hội thoại. `tabindex` do JS gắn để người dùng bàn phím cuộn được.
+ */
+.md-table { overflow-x: auto; border: 1px solid var(--line-soft); border-radius: var(--r-md); }
+.md-table:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.md-table table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.md-table th, .md-table td { padding: 8px 12px; text-align: left; vertical-align: top; }
+.md-table thead th { position: sticky; top: 0; border-bottom: 1px solid var(--line); background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+.md-table tbody tr + tr td { border-top: 1px solid var(--line-soft); }
+.md-table tbody tr:hover td { background: var(--surface); }
+/* Cột số đọc dễ hơn hẳn khi các chữ số thẳng hàng. */
+.md-table .md-right { text-align: right; font-variant-numeric: tabular-nums; }
+.md-table .md-center { text-align: center; }
+
+/* ---------- biểu đồ ---------- */
+
+/*
+ * Chiều cao cố định vì Chart.js với `maintainAspectRatio: false` cần một khung
+ * có kích thước thật để tính; để nó tự co theo nội dung thì canvas ra 0px.
+ */
+.md-chart { margin: 0; padding: 14px; height: 280px; border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--surface); }
+.md-chart canvas { width: 100% !important; height: 100% !important; }
+
 .code { position: relative; }
 .code pre { margin: 0; padding: 14px 16px; overflow-x: auto; border-radius: var(--r-md); border: 1px solid var(--line-soft); background: #0d0c0b; }
 .code pre code { padding: 0; background: none; font-size: 12.5px; line-height: 1.6; white-space: pre; }

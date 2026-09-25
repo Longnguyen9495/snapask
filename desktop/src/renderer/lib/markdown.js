@@ -45,6 +45,71 @@
     return text.replace(/\u0000(\d+)\u0000/g, (match, index) => `<code>${codes[Number(index)]}</code>`);
   }
 
+  /** Tách một dòng bảng thành các ô, bỏ dấu `|` ở hai đầu. */
+  const cellsOf = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+
+  /**
+   * Nhận diện bảng GitHub bắt đầu tại dòng `start`.
+   *
+   * Trả `null` khi không phải bảng, để chỗ gọi đi tiếp các luật khác. Số ô của
+   * mỗi hàng được ép về đúng số cột của tiêu đề: mô hình hay trả thừa hoặc
+   * thiếu một ô, mà thừa thì bảng vỡ còn thiếu thì lệch cột.
+   *
+   * @param {string[]} lines toàn bộ dòng
+   * @param {number} start chỉ số dòng tiêu đề
+   * @returns {{ html: string, end: number }|null} `end` là chỉ số dòng cuối của bảng
+   */
+  function matchTable(lines, start) {
+    const head = lines[start];
+    const divider = lines[start + 1];
+
+    if (!head || !divider || !head.includes('|')) return null;
+    if (!/^\s{0,3}\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$/.test(divider)) return null;
+
+    const headers = cellsOf(head);
+    const aligns = cellsOf(divider).map((spec) => {
+      const left = spec.startsWith(':');
+      const right = spec.endsWith(':');
+
+      if (left && right) return 'center';
+
+      return right ? 'right' : (left ? 'left' : '');
+    });
+
+    if (headers.length < 1 || aligns.length !== headers.length) return null;
+
+    // Căn lề đi qua class chứ không qua thuộc tính style: CSP của workspace
+    // không cho phép style nội tuyến.
+    const cell = (tag, text, index) => {
+      const align = aligns[index];
+
+      return `<${tag}${align ? ` class="md-${align}"` : ''}>${inline(escapeHtml(text))}</${tag}>`;
+    };
+
+    const rows = [];
+    let end = start + 1;
+
+    for (let i = start + 2; i < lines.length; i++) {
+      const line = lines[i];
+
+      if (!line.includes('|') || /^\s*$/.test(line)) break;
+
+      const cells = cellsOf(line);
+
+      while (cells.length < headers.length) cells.push('');
+      rows.push(cells.slice(0, headers.length));
+      end = i;
+    }
+
+    const thead = `<thead><tr>${headers.map((text, index) => cell('th', text, index)).join('')}</tr></thead>`;
+    const tbody = rows.length
+      ? `<tbody>${rows.map((cells) => `<tr>${cells.map((text, index) => cell('td', text, index)).join('')}</tr>`).join('')}</tbody>`
+      : '';
+
+    // `data-md-table` để lớp bên ngoài tìm lại bảng mà gắn nút xuất file.
+    return { html: `<div class="md-table" data-md-table><table>${thead}${tbody}</table></div>`, end };
+  }
+
   /**
    * @param {string} source markdown thô từ mô hình
    * @param {{ streaming?: boolean }} options đang stream thì khối mã chưa đóng vẫn hiện như khối mã
@@ -94,6 +159,25 @@
 
         const lang = fence[1] ? ` data-lang="${escapeHtml(fence[1])}"` : '';
         out.push(`<pre${lang}><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+
+        continue;
+      }
+
+      /*
+       * Bảng kiểu GitHub.
+       *
+       * Phải đứng trước heading và danh sách: dòng phân cách `|---|:--:|` cũng
+       * khớp luật đường kẻ ngang nếu để nó xét trước. Bảng chỉ thành hình khi
+       * dòng thứ hai đúng là dòng phân cách — một dòng lẻ có dấu `|` vẫn là
+       * đoạn văn bình thường.
+       */
+      const table = matchTable(lines, i);
+
+      if (table) {
+        flushParagraph();
+        flushList();
+        out.push(table.html);
+        i = table.end;
 
         continue;
       }

@@ -129,6 +129,27 @@ body {
 .msg pre code { padding: 0; background: none; }
 .msg strong { font-weight: 600; }
 
+/*
+ * Ô chat nhỏ giờ dùng chung bộ dựng markdown với cửa sổ chính, nên phải biết
+ * hiện những thứ trước đây nó không nhận: tiêu đề, danh sách, trích dẫn, bảng.
+ * Khung hẹp nên mọi thứ thu gọn hơn bản workspace.
+ */
+.msg > * + * { margin-top: .6em; }
+.msg h3, .msg h4, .msg h5, .msg h6 { font-size: 13.5px; font-weight: 650; }
+.msg ul, .msg ol { padding-left: 1.3em; }
+.msg li + li { margin-top: .2em; }
+.msg blockquote { padding-left: 10px; border-left: 2px solid var(--line); color: var(--text-dim); }
+.msg hr { border: 0; border-top: 1px solid var(--line-soft); }
+.msg .md-link { color: var(--accent); overflow-wrap: anywhere; }
+
+.msg .md-table { margin: 8px 0; overflow-x: auto; border: 1px solid var(--line-soft); border-radius: var(--r-sm); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.msg .md-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.msg .md-table th, .msg .md-table td { padding: 5px 8px; text-align: left; vertical-align: top; }
+.msg .md-table thead th { border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .25); font-weight: 650; white-space: nowrap; }
+.msg .md-table tbody tr + tr td { border-top: 1px solid var(--line-soft); }
+.msg .md-table .md-right { text-align: right; font-variant-numeric: tabular-nums; }
+.msg .md-table .md-center { text-align: center; }
+
 .msg--typing::after {
   content: '▍'; margin-left: 2px; color: var(--text-faint);
   animation: blink 1s steps(2) infinite;

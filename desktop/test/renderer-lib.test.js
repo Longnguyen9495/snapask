@@ -153,3 +153,32 @@ test('markdown: khối mã chưa đóng khi đang stream vẫn hiện như khố
 test('chữ thuần cho đoạn xem trước', () => {
   assert.equal(markdown.plain('**Tổng** là `1.250.000`\n\n- đồng'), 'Tổng là 1.250.000 đồng');
 });
+
+/* ---------- bảng ---------- */
+
+test('markdown: bảng dựng đủ đầu, thân và căn lề', () => {
+  const html = markdown.render('| Tháng | Doanh thu |\n|---|---:|\n| 01 | 1.200 |\n| 02 | 980 |');
+
+  assert.match(html, /<div class="md-table" data-md-table><table>/);
+  assert.match(html, /<thead><tr><th>Tháng<\/th><th class="md-right">Doanh thu<\/th><\/tr><\/thead>/);
+  assert.match(html, /<td>01<\/td><td class="md-right">1\.200<\/td>/);
+  assert.match(html, /<td>02<\/td><td class="md-right">980<\/td>/);
+});
+
+test('markdown: bảng thoát HTML trong ô như mọi chỗ khác', () => {
+  const html = markdown.render('| x |\n|---|\n| <img src=x onerror=alert(1)> |');
+
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(html, /<img/);
+});
+
+test('markdown: hàng thiếu ô được đệm cho khớp số cột', () => {
+  const html = markdown.render('| a | b | c |\n|---|---|---|\n| 1 |');
+
+  assert.match(html, /<tr><td>1<\/td><td><\/td><td><\/td><\/tr>/);
+});
+
+test('markdown: một dòng có dấu gạch đứng vẫn là đoạn văn, và --- vẫn là đường kẻ', () => {
+  assert.match(markdown.render('a | b\nchữ thường'), /<p>a \| b<br>chữ thường<\/p>/);
+  assert.match(markdown.render('---'), /<hr>/);
+});

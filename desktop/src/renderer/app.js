@@ -13,22 +13,16 @@ let conversationId = null;
 let streaming = null;
 let activeStep = null;
 
-const escapeHtml = (text) => text.replace(/[&<>"]/g, (char) => (
-  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]
-));
-
-/**
- * Định dạng tối thiểu cho câu trả lời: khối mã, mã trong dòng, in đậm.
+/*
+ * Dùng chung bộ dựng markdown với cửa sổ chính.
  *
- * Tự viết thay vì kéo một thư viện markdown về, vì nội dung đến từ mô hình là
- * dữ liệu không tin được — ở đây mọi thứ đều đã escape trước khi chèn thẻ.
+ * Trước đây ô chat nhỏ có bộ dựng riêng chỉ biết ba thứ: khối mã, mã trong dòng
+ * và in đậm. Cùng một câu trả lời mà hai cửa sổ hiện khác nhau — bảng số liệu ở
+ * đây rơi ra thành một mớ dấu gạch đứng. Một bộ dựng, một nơi để kiểm lại độ an
+ * toàn.
  */
-function render(text) {
-  return escapeHtml(text)
-    .replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => `<pre><code>${code.replace(/\n$/, '')}</code></pre>`)
-    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-}
+const { markdown } = window.SnapAskLib;
+const render = (text) => markdown.render(text);
 
 function addMessage(role, text = '') {
   emptyState.hidden = true;

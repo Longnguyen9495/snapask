@@ -325,6 +325,12 @@
   <script src="lib/markdown.js"></script>
   <script src="lib/history.js"></script>
   <script src="lib/stream.js"></script>
+  <!--
+    Chart.js đi kèm trong gói chứ không lấy từ CDN: CSP chỉ cho `script-src
+    'self'`. Bản chép nằm ở src/renderer/vendor/, đồng bộ bằng `npm run vendor`.
+  -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="lib/chart.js"></script>
   <script src="workspace.js"></script>
 </body>
 </html>

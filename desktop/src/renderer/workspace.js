@@ -12,7 +12,27 @@
  */
 (() => {
   const api = window.snapask;
-  const { markdown, history: historyLib, stream: streamLib } = window.SnapAskLib;
+  const { markdown, history: historyLib, stream: streamLib, chart: chartLib } = window.SnapAskLib;
+
+  /*
+   * Biểu đồ đang hiển thị.
+   *
+   * Chart.js gắn listener lên canvas và giữ tham chiếu nội bộ, nên nút DOM bị
+   * thay không đủ để nó được thu dọn. Mỗi lần dựng lại luồng hội thoại phải gọi
+   * `destroy()` cho từng cái, nếu không đọc lâu sẽ tích lại hàng chục biểu đồ
+   * chết trong bộ nhớ.
+   */
+  const charts = [];
+
+  function destroyCharts() {
+    while (charts.length) {
+      try {
+        charts.pop().destroy();
+      } catch {
+        // Đã bị huỷ từ trước thì thôi.
+      }
+    }
+  }
   const icons = window.SnapAskIcons;
   const t = (key, vars) => window.i18n.t(key, vars);
 
@@ -591,6 +611,58 @@
 
   /* ---------- vẽ tin nhắn ---------- */
 
+  /** Màu hiện hành của giao diện, để biểu đồ vẽ cùng một hệ với phần còn lại. */
+  function chartTheme() {
+    const style = getComputedStyle(document.body);
+
+    return {
+      text: style.getPropertyValue('--text').trim() || '#f3efe8',
+      dim: style.getPropertyValue('--text-dim').trim() || '#a49c90',
+      grid: style.getPropertyValue('--line-soft').trim() || '#2a251f',
+    };
+  }
+
+  /*
+   * Đổi khối ```chart thành biểu đồ thật.
+   *
+   * Chỉ chạy khi câu trả lời đã trọn vẹn: lúc đang stream, JSON còn dở nên
+   * không parse được, và `fillLiveNode` dựng lại toàn bộ nút ở mỗi mẩu chữ nên
+   * biểu đồ vừa vẽ sẽ bị xoá ngay.
+   */
+  function enhanceCharts(container) {
+    if (!window.Chart) return;
+
+    for (const pre of container.querySelectorAll('pre[data-lang="chart"]')) {
+      // Khối đã nằm trong khung sao chép thì bỏ qua: nó là mã, không phải biểu đồ.
+      if (pre.parentElement?.classList.contains('code')) continue;
+
+      try {
+        const instance = chartLib.mount(pre, {
+          Chart: window.Chart,
+          theme: chartTheme(),
+          labels: { chart: t('Chart') },
+        });
+
+        // JSON không dùng được thì để nguyên khối mã — người dùng vẫn đọc được
+        // số liệu thô, hơn là thấy một khoảng trống không giải thích.
+        if (instance) charts.push(instance);
+      } catch (error) {
+        console.warn('chart:', error.message);
+      }
+    }
+  }
+
+  /** Bảng rộng hơn khung thì cuộn ngang; người dùng bàn phím cũng phải cuộn được. */
+  function enhanceTables(container) {
+    for (const table of container.querySelectorAll('[data-md-table]')) {
+      if (table.hasAttribute('tabindex')) continue;
+
+      table.tabIndex = 0;
+      table.setAttribute('role', 'region');
+      table.setAttribute('aria-label', t('Table'));
+    }
+  }
+
   function enhanceCode(container) {
     for (const pre of container.querySelectorAll('pre')) {
       if (pre.parentElement.classList.contains('code')) continue;
@@ -738,7 +810,14 @@
     const body = el('div', 'msg__body prose');
     body.innerHTML = markdown.render(content, { streaming });
 
-    if (!streaming) enhanceCode(body);
+    // Bảng hiện được ngay lúc đang gõ; biểu đồ thì chờ câu trả lời trọn vẹn,
+    // vì JSON còn dở không parse được và nút sẽ bị dựng lại ở mẩu chữ kế tiếp.
+    enhanceTables(body);
+
+    if (!streaming) {
+      enhanceCharts(body);
+      enhanceCode(body);
+    }
 
     return body;
   }
@@ -770,6 +849,11 @@
   }
 
   function fillLiveNode(node, message) {
+    // Nút này được dựng lại ở mỗi mẩu chữ. Biểu đồ chỉ mọc ra ở lần cuối, khi
+    // câu trả lời đã trọn, nhưng lần dựng sau đó — chẳng hạn khi sửa dòng trạng
+    // thái — vẫn phải huỷ cái cũ trước, nếu không nó nằm lại trong bộ nhớ.
+    if (node.querySelector('[data-md-chart]')) destroyCharts();
+
     node.replaceChildren();
     node.className = `msg msg--assistant${message.status === 'pending' ? ' msg--pending' : ''}${message.status === 'streaming' ? ' msg--streaming' : ''}`;
     node.setAttribute('aria-busy', String(!streamLib.isFinal(message)));
@@ -828,6 +912,8 @@
     const c = state.conversation;
     const thread = els.thread;
 
+    // Luồng sắp bị thay toàn bộ: huỷ biểu đồ cũ trước khi mất tham chiếu tới chúng.
+    destroyCharts();
     thread.replaceChildren();
     thread.setAttribute('aria-busy', String(c.loading));
 

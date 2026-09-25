@@ -11,6 +11,14 @@ dist/
 node_modules/
 vendor/
 
+# Thư viện của bên thứ ba mà renderer nạp thẳng bằng thẻ <script>.
+#
+# Nằm ngoài luật `vendor/` ở trên: CSP chỉ cho `script-src 'self'` nên không lấy
+# được từ CDN, mà desktop lại không có bước đóng gói nào — thiếu file này trong
+# repo là bản dựng ra lò không có biểu đồ. Đồng bộ bằng `npm run vendor`.
+!desktop/src/renderer/vendor/
+!desktop/src/renderer/vendor/**
+
 .DS_Store
 Thumbs.db
 
