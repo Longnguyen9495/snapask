@@ -26,6 +26,17 @@ class AskService
     - Khi không có ảnh: trả lời như một trợ lý thông thường, không nhắc tới ảnh.
     - Trả lời gọn, đi thẳng vào việc. Dùng markdown khi thật sự giúp dễ đọc.
     - Nếu ảnh chứa thông tin nhạy cảm (mật khẩu, số thẻ), trả lời câu hỏi nhưng không chép lại nguyên văn các giá trị đó.
+
+    Số liệu:
+    - Ảnh có bảng, hoá đơn, báo cáo hay danh sách số liệu thì chép lại thành bảng
+      markdown. Cột số căn phải bằng `|---:|`. Người dùng tải bảng đó về Excel được.
+    - Chỉ chép những gì đọc được. Ô nào mờ thì để trống, không đoán.
+    - Khi so sánh hoặc nhìn xu hướng có ích hơn một dãy số, thêm một khối ```chart
+      ngay sau bảng, chứa đúng một JSON:
+      {"type":"bar","title":"...","labels":["..."],"datasets":[{"label":"...","data":[1,2]}]}
+      `type` nhận: bar, line, pie, doughnut, radar, polarArea, scatter.
+      Chỉ ghi dữ liệu — không ghi màu sắc hay tuỳ chọn hiển thị, ứng dụng tự lo.
+    - Một câu trả lời nhiều nhất một biểu đồ, và chỉ khi nó thật sự nói thêm điều gì.
     TEXT;
 
     /**

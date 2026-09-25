@@ -9,6 +9,8 @@ use App\Http\Controllers\Web\DownloadPageController;
 use App\Http\Controllers\Web\EmailVerificationController;
 use App\Http\Controllers\Web\LandingController;
 use App\Http\Controllers\Web\LocaleController;
+use App\Http\Controllers\Web\MessageExportController;
+use App\Http\Controllers\Web\PasswordResetController;
 use App\Http\Controllers\Web\ProviderPageController;
 use App\Http\Controllers\Web\RegisterPageController;
 use App\Http\Controllers\Web\SessionController;
@@ -70,6 +72,21 @@ Route::middleware('guest')->group(function (): void {
     Route::post('register', [RegisterPageController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('register.store');
+
+    /*
+     * Quên mật khẩu. Link trong thư có hạn 60 phút (config/auth.php), và broker
+     * bắt hai lần gửi cách nhau ít nhất 60 giây; trần tần suất ở đây chặn thêm
+     * một tầng nữa, để hộp thư của người khác không bị dội thư.
+     */
+    Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'email'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:6,1')
+        ->name('password.store');
 });
 
 Route::middleware('auth')->group(function (): void {
@@ -112,6 +129,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('conversations', [ConversationPageController::class, 'index'])->name('web.conversations.index');
     Route::get('conversations/{conversation}', [ConversationPageController::class, 'show'])->name('web.conversations.show');
     Route::get('conversations/{conversation}/image', [ConversationPageController::class, 'image'])->name('web.conversations.image');
+
+    /*
+     * Tải bảng trong một câu trả lời về dạng CSV. Bảng được tách lại từ markdown
+     * mỗi lần tải, nên thứ tải về luôn khớp thứ đang hiện trên màn hình.
+     */
+    Route::get('conversations/{conversation}/messages/{message}/table', MessageExportController::class)
+        ->name('web.conversations.message.table');
     Route::patch('conversations/{conversation}', [ConversationPageController::class, 'update'])->name('web.conversations.update');
     Route::delete('conversations/{conversation}', [ConversationPageController::class, 'destroy'])->name('web.conversations.destroy');
 

@@ -43,6 +43,31 @@
               @else
                 <x-markdown :content="$message->content" />
 
+                {{--
+                  Câu trả lời có bảng thì cho tải về luôn. Bảng được tách lại từ
+                  markdown ngay đây, nên nút chỉ hiện khi thật sự có bảng.
+                --}}
+                @php($tables = app(\App\Services\TableExtractor::class)->extract((string) $message->content))
+                @if ($tables !== [])
+                  <p class="actions msg__export">
+                    <a href="{{ route('web.conversations.message.table', [$conversation, $message, 'format' => 'xlsx']) }}"
+                       class="btn btn--secondary btn--sm" download>
+                      <x-icon name="download" :size="14" />{{ __('Excel') }}
+                    </a>
+                    <a href="{{ route('web.conversations.message.table', [$conversation, $message, 'format' => 'pptx']) }}"
+                       class="btn btn--secondary btn--sm" download>
+                      <x-icon name="download" :size="14" />{{ __('Slides') }}
+                    </a>
+                    {{-- CSV tách từng bảng một, vì mỗi tệp CSV chỉ chứa được một bảng. --}}
+                    @foreach ($tables as $index => $table)
+                      <a href="{{ route('web.conversations.message.table', [$conversation, $message, 'format' => 'csv', 'table' => $index]) }}"
+                         class="btn btn--ghost btn--sm" download>
+                        {{ count($tables) > 1 ? __('CSV :number', ['number' => $index + 1]) : __('CSV') }}
+                      </a>
+                    @endforeach
+                  </p>
+                @endif
+
                 @if (filled($message->tools_used))
                   <details class="disclosure disclosure--quiet tools">
                     <summary>
