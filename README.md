@@ -208,9 +208,10 @@ Mỗi hệ điều hành một file:
 
 ```bash
 cd desktop
+npm run check      # cú pháp, hai file ngôn ngữ và test — chạy trước khi đóng gói
 npm run icons      # sinh icon.png, tray, icon.ico, icon.icns
-npm run dist:win   # SnapAsk-<ver>-win-x64.exe   — chạy thẳng, không cần cài
-npm run dist:mac   # SnapAsk-<ver>-mac-universal.dmg — chỉ chạy được trên máy Mac
+npm run dist:win   # SnapAsk-Setup-<ver>-win-x64.exe   — bộ cài NSIS
+npm run dist:mac   # SnapAsk-Setup-<ver>-mac-universal.dmg — chỉ dựng được trên máy Mac
 ```
 
 Bản macOS **phải dựng trên máy Mac**: `electron-builder` gọi tới công cụ của
@@ -223,14 +224,19 @@ Bộ cài chưa ký số nên Windows hiện SmartScreen còn macOS hiện Gatek
 `CSC_KEY_PASSWORD`, và cho macOS thêm `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
 `APPLE_TEAM_ID` — để trống thì workflow bỏ qua bước ký chứ không gãy.
 
-Bản Windows dùng đích `portable`. Sau này cần tự cập nhật thì phải quay lại
-`nsis`, vì `electron-updater` không hỗ trợ bản portable.
+Bản Windows dùng đích `nsis`: `electron-updater` không chạy được với bản
+portable, mà tự cập nhật thì quan trọng hơn việc chạy thẳng không cần cài.
+
+Cùng với bộ cài, `electron-builder` sinh `latest.yml` (macOS là `latest-mac.yml`)
+và các file `.blockmap`. **Phải phát hành chúng kèm bộ cài** — đó là thứ app
+đang chạy đọc để biết có bản mới; thiếu thì không ai được nhắc cập nhật. Workflow
+đã đính sẵn, còn khi dựng tay thì nhớ chép cả cụm sang `storage/app/releases/`.
 
 > Máy nào đã đặt sẵn `ELECTRON_RUN_AS_NODE=1` — terminal tích hợp của VS Code là
 > một — thì bộ cài mở lên rồi thoát ngay, không báo lỗi gì. Biến này truyền cả
-> sang tiến trình mà bản portable giải nén ra. Xoá hẳn biến trước khi chạy:
+> sang tiến trình con mà bộ cài sinh ra. Xoá hẳn biến trước khi chạy:
 > `Remove-Item Env:\ELECTRON_RUN_AS_NODE` trên PowerShell, hoặc
-> `env -u ELECTRON_RUN_AS_NODE ./SnapAsk-<ver>-win-x64.exe` trên bash.
+> `env -u ELECTRON_RUN_AS_NODE ./SnapAsk-Setup-<ver>-win-x64.exe` trên bash.
 
 ### Phát hành lên trang tải về
 
@@ -239,12 +245,16 @@ file ở đâu. Điền `*_URL` thì người tải được chuyển thẳng sa
 file được lấy từ `server/storage/app/releases/`.
 
 ```dotenv
-SNAPASK_RELEASE_VERSION=0.2.0
-SNAPASK_RELEASE_WIN_FILE=SnapAsk-0.2.0-win-x64.exe
-SNAPASK_RELEASE_WIN_URL=https://github.com/…/SnapAsk-0.2.0-win-x64.exe
+SNAPASK_RELEASE_VERSION=0.3.0
+SNAPASK_RELEASE_WIN_FILE=SnapAsk-Setup-0.3.0-win-x64.exe
+SNAPASK_RELEASE_WIN_URL=https://github.com/…/SnapAsk-Setup-0.3.0-win-x64.exe
 SNAPASK_RELEASE_WIN_SIZE=98765432
 SNAPASK_RELEASE_WIN_SHA256=…
 ```
+
+Tên file phải khớp `artifactName` trong `desktop/package.json`
+(`SnapAsk-Setup-${version}-${os}-${arch}.${ext}`); điền sai thì trang tải về trả
+404 chứ không có trang trắng nào.
 
 Chưa khai bản nào thì trang tải về nói thẳng là chưa phát hành, còn
 `/download/{platform}` trả 404 — không có trang trắng nào.
@@ -253,10 +263,12 @@ Chưa khai bản nào thì trang tải về nói thẳng là chưa phát hành, 
 
 Những phần cần làm trước khi bán được cho khách ngoài:
 
-- Đăng nhập bằng Google, Facebook, Zalo — giao diện đã dựng, phần nối thật chưa làm
+- Đăng nhập bằng Google, Facebook, Zalo — chưa có gì, kể cả giao diện
 - Thanh toán và nâng gói — hiện mọi tài khoản mới đều vào gói mặc định trong `config/snapask.php`
-- Tự cập nhật bản mới (`electron-updater`)
 - Ký số bộ cài: Windows cần chứng chỉ code signing, macOS cần Apple Developer Program
-- Màn hình cài đặt trong app cho khoá provider riêng của khách
+- Khai khoá provider riêng ngay trong app desktop — hiện phải mở trang web, và
+  đó là chủ ý: khoá không nên đi qua máy khách
 - OAuth cho connector MCP — hiện mới nhận token dán tay
 - Video và ảnh demo thật cho trang chủ — hiện đang là một khối minh hoạ dựng bằng CSS
+- Trạng thái hỏng của provider trên trang `/providers` — khách chỉ biết khoá sai
+  khi hỏi thất bại trong app, khác với `/connectors` đã hiện lỗi lần đồng bộ cuối

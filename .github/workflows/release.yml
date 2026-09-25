@@ -29,9 +29,11 @@ jobs:
           - os: windows-latest
             script: dist:win
             pattern: 'SnapAsk-*.exe'
+            manifest: latest.yml
           - os: macos-latest
             script: dist:mac
             pattern: 'SnapAsk-*.dmg'
+            manifest: latest-mac.yml
 
     runs-on: ${{ matrix.os }}
 
@@ -48,9 +50,9 @@ jobs:
         working-directory: desktop
         run: npm ci
 
-      - name: Kiểm hai file ngôn ngữ
+      - name: Kiểm cú pháp, hai file ngôn ngữ và chạy test
         working-directory: desktop
-        run: npm run i18n:check
+        run: npm run check
 
       - name: Sinh icon
         working-directory: desktop
@@ -77,11 +79,16 @@ jobs:
           shasum -a 256 ${{ matrix.pattern }} > "SHA256SUMS-${{ runner.os }}.txt"
           cat "SHA256SUMS-${{ runner.os }}.txt"
 
+      # `latest*.yml` và `.blockmap` là thứ electron-updater đọc để biết có bản
+      # mới và tải phần chênh lệch. Thiếu chúng thì bộ cài vẫn tải tay được,
+      # nhưng app đang chạy không bao giờ thấy bản mới.
       - uses: actions/upload-artifact@v4
         with:
           name: snapask-${{ runner.os }}
           path: |
             desktop/dist/${{ matrix.pattern }}
+            desktop/dist/${{ matrix.manifest }}
+            desktop/dist/*.blockmap
             desktop/dist/SHA256SUMS-${{ runner.os }}.txt
           if-no-files-found: error
 
@@ -105,6 +112,9 @@ jobs:
           files: |
             dist/SnapAsk-*.exe
             dist/SnapAsk-*.dmg
+            dist/*.blockmap
+            dist/latest.yml
+            dist/latest-mac.yml
             dist/SHA256SUMS.txt
           draft: true
           generate_release_notes: true
