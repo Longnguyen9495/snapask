@@ -34,7 +34,7 @@
     <ul class="nav">
       @foreach ($items as $item)
         <li>
-          <a href="{{ route($item['route']) }}" class="nav__link" @if (request()->routeIs($item['match'])) aria-current="page" @endif>
+          <a href="{{ route($item['route']) }}" class="nav__link" title="{{ $item['label'] }}" @if (request()->routeIs($item['match'])) aria-current="page" @endif>
             <x-icon :name="$item['icon']" />
             <span>{{ $item['label'] }}</span>
           </a>
@@ -46,7 +46,7 @@
     <ul class="nav" aria-labelledby="nav-personal">
       @foreach ($personal as $item)
         <li>
-          <a href="{{ route($item['route']) }}" class="nav__link" @if (request()->routeIs($item['match'])) aria-current="page" @endif>
+          <a href="{{ route($item['route']) }}" class="nav__link" title="{{ $item['label'] }}" @if (request()->routeIs($item['match'])) aria-current="page" @endif>
             <x-icon :name="$item['icon']" />
             <span>{{ $item['label'] }}</span>
           </a>
@@ -56,7 +56,7 @@
   </nav>
 
   <div class="sidebar__foot">
-    <a href="{{ app()->getLocale() === 'vi' ? route('download') : route('download.en') }}" class="get-app">
+    <a href="{{ app()->getLocale() === 'vi' ? route('download') : route('download.en') }}" class="get-app" title="{{ __('Get the desktop app') }}">
       <x-icon name="download" />
       <span>
         {{ __('Get the desktop app') }}

@@ -19,55 +19,12 @@
 </head>
 <body class="portal">
   <a href="#main" class="skip">{{ __('Skip to main content') }}</a>
-  @php($locale = app()->getLocale())
-  @php($quotaLow = ! $shellQuota['own_key'] && $shellQuota['remaining'] <= max(1, (int) floor($shellQuota['limit'] * 0.1)))
 
-  <div class="shell">
-    <x-sidebar-nav :user="$shellUser" :quota="$shellQuota" />
-    <div class="scrim" aria-hidden="true"></div>
-
-    <div class="main">
-      <header class="topbar">
-        <button type="button" class="btn btn--ghost btn--icon nav-toggle" data-nav-toggle
-                aria-expanded="false" aria-controls="portal-nav" aria-label="{{ __('Open navigation') }}">
-          <x-icon name="menu" />
-        </button>
-
-        <span class="topbar__title">@yield('section', __('Management'))</span>
-
-        <div class="topbar__end">
-          <a href="{{ route('web.account') }}#plan" @class(['quota-chip', 'quota-chip--low' => $quotaLow])
-             aria-label="{{ $shellQuota['own_key']
-                ? __('Own key, no ask limit')
-                : __(':remaining of :limit asks left this month', ['remaining' => $shellQuota['remaining'], 'limit' => $shellQuota['limit']]) }}">
-            @if ($shellQuota['own_key'])
-              <x-icon name="key" :size="15" />
-              <span>{{ __('Own key') }}</span>
-            @else
-              <x-icon name="message" :size="15" />
-              <b class="tabular">{{ $shellQuota['remaining'] }}/{{ $shellQuota['limit'] }}</b>
-              <span>{{ __('asks left') }}</span>
-            @endif
-          </a>
-
-          <form method="POST" action="{{ route('locale.switch', $locale === 'vi' ? 'en' : 'vi') }}">
-            @csrf
-            <button type="submit" class="lang-switch" title="{{ __('Switch language') }}"
-                    aria-label="{{ __('Switch language') }}">{{ $locale === 'vi' ? 'EN' : 'VI' }}</button>
-          </form>
-
-          <x-account-menu :user="$shellUser" />
-        </div>
-      </header>
-
-      <main id="main" class="content" tabindex="-1">
-        <div @class(['page', 'page--narrow' => View::hasSection('narrow')])>
-          <x-flash />
-          @yield('content')
-        </div>
-      </main>
-    </div>
-  </div>
+  <x-app-shell :user="$shellUser" :quota="$shellQuota"
+               :section="View::yieldContent('section', __('Management'))"
+               :narrow="View::hasSection('narrow')">
+    @yield('content')
+  </x-app-shell>
 
   <x-confirm-dialog />
   <p class="sr-only" id="portal-live" role="status" aria-live="polite"></p>

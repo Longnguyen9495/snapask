@@ -16,13 +16,14 @@
         <dt>{{ __('Name') }}</dt>
         <dd>{{ $user->name }}</dd>
         <dt>{{ __('Email') }}</dt>
+        {{--
+          Chỉ có nhánh "đã xác thực": tuyến này nằm sau middleware `verified`,
+          nên người chưa xác thực không bao giờ tới được đây — họ dừng ở
+          /email/verify, nơi đã có nút gửi lại liên kết.
+        --}}
         <dd class="actions">
           <span class="break">{{ $user->email }}</span>
-          @if ($user->hasVerifiedEmail())
-            <x-status-badge status="ok">{{ __('Verified') }}</x-status-badge>
-          @else
-            <x-status-badge status="error">{{ __('Not verified') }}</x-status-badge>
-          @endif
+          <x-status-badge status="ok">{{ __('Verified') }}</x-status-badge>
         </dd>
         <dt>{{ __('Member since') }}</dt>
         <dd><x-time :at="$user->created_at" :relative="false" /></dd>

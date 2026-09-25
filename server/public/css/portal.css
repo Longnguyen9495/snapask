@@ -26,6 +26,8 @@
   --font: 'Be Vietnam Pro', system-ui, sans-serif;
   --r-pill: 999px;
   --side-w: 248px;
+  /* Bề ngang thanh bên khi thu về chỉ còn icon, ở dải máy tính bảng. */
+  --rail-w: 72px;
   --top-h: 60px;
 }
 
@@ -524,6 +526,10 @@ kbd {
 .prose blockquote { padding-left: 14px; border-left: 3px solid var(--line); color: var(--text-dim); }
 .prose table { width: 100%; border-collapse: collapse; font-size: 14px; display: block; overflow-x: auto; }
 .prose th, .prose td { padding: 7px 10px; border: 1px solid var(--line-soft); text-align: left; }
+.prose thead th { background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+/* CommonMark ghi căn lề bằng thuộc tính align, không phải class như bản desktop. */
+.prose th[align="right"], .prose td[align="right"] { text-align: right; font-variant-numeric: tabular-nums; }
+.prose th[align="center"], .prose td[align="center"] { text-align: center; }
 .prose code { padding: 1px 6px; border-radius: 5px; font: 13px/1.5 ui-monospace, Consolas, monospace; background: var(--surface-2); }
 .prose hr { border: 0; border-top: 1px solid var(--line-soft); }
 
@@ -600,6 +606,9 @@ body.guest { display: grid; place-items: start center; padding: 56px 20px 80px; 
 .guest__foot { margin-top: 20px; text-align: center; font-size: 14px; color: var(--text-dim); }
 .guest__foot a { font-weight: 600; }
 
+/* Link phụ nằm trong biểu mẫu, ngay dưới nút chính. */
+.form__foot { margin: -4px 0 0; text-align: center; font-size: 14px; }
+
 /* ============================================================
  * Ngăn kéo điều hướng (màn hình hẹp)
  * ============================================================ */
@@ -615,6 +624,49 @@ body.guest { display: grid; place-items: start center; padding: 56px 20px 80px; 
 }
 
 @media (max-width: 1023px) {
+  .topbar { padding-inline: 20px; }
+  .content { padding: 26px 20px 64px; }
+
+  .detail { grid-template-columns: minmax(0, 1fr); }
+  .detail__rail { position: static; order: 2; }
+  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-strip .stat:nth-child(3) { border-left: 0; }
+  .summary-strip .stat:nth-child(n+3) { border-top: 1px solid var(--line-soft); }
+}
+
+/*
+ * Máy tính bảng: thanh bên thu về dải icon thay vì thành ngăn kéo.
+ *
+ * Màn hình cỡ này còn đủ chỗ cho một dải 72px, nên giữ điều hướng luôn hiện
+ * còn hơn giấu sau một nút bấm. Nhãn chữ chỉ bị ẩn khỏi mắt bằng `.sr-only`
+ * chứ không bị `display: none` — trình đọc màn hình vẫn đọc được tên mục, và
+ * `title` lo phần chú thích khi rê chuột.
+ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .shell { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+
+  .sidebar { padding: 16px 10px 14px; align-items: center; }
+  .sidebar__top { justify-content: center; margin-bottom: 16px; }
+  .brand { justify-content: center; }
+  .brand__name { display: none; }
+
+  .sidebar nav { width: 100%; }
+  .nav__link { justify-content: center; gap: 0; padding: 8px; }
+  .nav__link > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nav__link[aria-current="page"]::before { left: -10px; }
+  .nav__label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* Hai nhóm mục dính liền nhau khi mất tiêu đề nhóm; kẻ một vạch thay chữ. */
+  .nav + .nav { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+
+  .sidebar__foot { width: 100%; align-items: center; }
+  .get-app { justify-content: center; padding: 11px 8px; }
+  .get-app > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .who { justify-content: center; padding: 8px 0; }
+  .who__text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+@media (max-width: 767px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
 
   .sidebar {
@@ -628,17 +680,7 @@ body.guest { display: grid; place-items: start center; padding: 56px 20px 80px; 
   .shell.is-nav-open .scrim { display: block; }
 
   .nav-toggle { display: inline-flex; }
-  .topbar { padding-inline: 20px; }
-  .content { padding: 26px 20px 64px; }
 
-  .detail { grid-template-columns: minmax(0, 1fr); }
-  .detail__rail { position: static; order: 2; }
-  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .summary-strip .stat:nth-child(3) { border-left: 0; }
-  .summary-strip .stat:nth-child(n+3) { border-top: 1px solid var(--line-soft); }
-}
-
-@media (max-width: 767px) {
   h1 { font-size: 22px; }
   .topbar { gap: 8px; padding-inline: 14px; }
   .topbar__title { display: none; }
@@ -668,7 +710,14 @@ body.guest { display: grid; place-items: start center; padding: 56px 20px 80px; 
   .checklist .btn { margin-left: 40px; }
   .page-head__actions { width: 100%; }
   .menu__panel { position: fixed; top: calc(var(--top-h) + 6px); left: 12px; right: 12px; width: auto; }
-  .btn, .chip, .pagination__link { min-height: 44px; }
+
+  /*
+   * Ngón tay cần chỗ rộng hơn con trỏ chuột. `.btn--icon.btn--sm` và
+   * `.lang-switch` phải gọi đích danh: chúng khai width/min-height bằng
+   * selector mạnh hơn `.btn` nên quy tắc chung bên dưới không với tới.
+   */
+  .btn, .chip, .pagination__link, .lang-switch { min-height: 44px; }
+  .btn--icon, .btn--icon.btn--sm { width: 44px; }
 }
 
 /* Trang tài khoản và cài đặt */

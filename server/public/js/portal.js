@@ -51,7 +51,9 @@
   const shell = document.querySelector('.shell');
   const sidebar = document.getElementById('portal-nav');
   const navToggle = document.querySelector('[data-nav-toggle]');
-  const narrow = window.matchMedia('(max-width: 1023px)');
+  // Khớp với breakpoint ngăn kéo trong portal.css. Từ 768px trở lên thanh bên
+  // là dải icon cố định, không còn là ngăn kéo để mở ra đóng vào.
+  const narrow = window.matchMedia('(max-width: 767px)');
 
   if (shell && sidebar && navToggle) {
     const setOpen = (open, { restore = true } = {}) => {
@@ -193,6 +195,26 @@
         returnFocus?.focus?.();
       }
     });
+  } else {
+    /*
+     * Trình duyệt không có <dialog>: quay về hộp thoại của trình duyệt.
+     *
+     * Xấu hơn nhiều, nhưng xoá vĩnh viễn thì thà hỏi bằng hộp thoại xấu còn hơn
+     * không hỏi. Không có nhánh này thì form đi thẳng, mất dữ liệu không báo.
+     */
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+
+      if (!(form instanceof HTMLFormElement) || !form.dataset.confirm) return;
+
+      if (!window.confirm(form.dataset.confirm)) {
+        event.preventDefault();
+
+        return;
+      }
+
+      markBusy(form);
+    }, true);
   }
 
   /* ---------- trạng thái đang gửi ---------- */

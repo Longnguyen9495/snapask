@@ -10,6 +10,8 @@
     $quota = $user->quotaSummary();
     $setup = $user->activeSetup();
     $createErrors = $errors->getBag('default')->any();
+    // Nhà cung cấp đang chạy, để đổi nhanh model ngay ở khối trạng thái.
+    $activeProvider = $usingDefault ? null : $providers->firstWhere('id', $user->active_provider_id);
   @endphp
 
   <x-page-header :title="__('AI models')" :eyebrow="__('Model providers')"
@@ -33,6 +35,29 @@
         {{ __('Via :provider on your own key. Asks are not counted against your plan.', ['provider' => $setup['provider']]) }}
       @endif
     </p>
+
+    {{--
+      Đổi model ngay tại đây, không phải cuộn xuống tìm trong danh sách.
+
+      Chỉ hiện khi nhà cung cấp đang chạy có từ hai model trở lên — một model
+      thì không có gì để đổi, và bản mặc định của SnapAsk cũng vậy.
+    --}}
+    @if ($activeProvider && count($activeProvider->models) > 1)
+      <div class="option__models chips" role="group" aria-label="{{ __('Switch model on :name', ['name' => $activeProvider->name]) }}">
+        @foreach ($activeProvider->models as $model)
+          @php $selected = $setup['model'] === $model; @endphp
+          <form method="POST" action="{{ route('web.providers.select', $activeProvider) }}">
+            @csrf
+            <input type="hidden" name="model" value="{{ $model }}">
+            <button type="submit" class="chip" aria-pressed="{{ $selected ? 'true' : 'false' }}"
+                    aria-label="{{ __('Use :model via :provider', ['model' => $model, 'provider' => $activeProvider->name]) }}">
+              @if ($selected) <x-icon name="check" :size="14" /> @endif
+              {{ $model }}
+            </button>
+          </form>
+        @endforeach
+      </div>
+    @endif
   </section>
 
   <section class="section" aria-labelledby="choose-title">
