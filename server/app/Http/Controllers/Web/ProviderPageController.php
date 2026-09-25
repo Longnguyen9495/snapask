@@ -43,11 +43,13 @@ class ProviderPageController extends Controller
         abort_unless($provider->user_id === $request->user()->id, 404);
 
         $provider->update([
-            ...$request->safe()->only(['name', 'base_url', 'api_key', 'api_format']),
+            ...$request->safe()->only(['name', 'base_url', 'api_format']),
+            ...($request->filled('api_key') ? ['api_key' => $request->validated('api_key')] : []),
             'models' => $request->modelList(),
         ]);
 
-        return redirect()->route('web.providers.index')->with('status', __('Updated.'));
+        return redirect()->route('web.providers.index')
+            ->with('status', __('Saved :name.', ['name' => $provider->name]));
     }
 
     /** Chọn nhà cung cấp và mô hình dùng cho các lượt hỏi tiếp theo. */

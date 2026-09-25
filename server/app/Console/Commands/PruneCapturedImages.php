@@ -27,7 +27,9 @@ class PruneCapturedImages extends Command
             ->chunkById(200, function ($conversations) use ($disk, &$removed): void {
                 foreach ($conversations as $conversation) {
                     $disk->delete($conversation->image_path);
-                    $conversation->update(['image_path' => null, 'image_expires_at' => null]);
+                    // Dọn ảnh không phải hoạt động của người dùng: giữ nguyên
+                    // `updated_at` để hội thoại không nhảy lên đầu lịch sử.
+                    Conversation::withoutTimestamps(fn () => $conversation->update(['image_path' => null, 'image_expires_at' => null]));
                     $removed++;
                 }
             });

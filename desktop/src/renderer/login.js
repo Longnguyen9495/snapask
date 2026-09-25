@@ -4,6 +4,7 @@ const guest = document.getElementById('guest');
 const signed = document.getElementById('signed');
 const form = document.getElementById('form');
 const error = document.getElementById('error');
+const notice = document.getElementById('notice');
 const submit = document.getElementById('submit');
 const lead = document.getElementById('lead');
 const socialNote = document.getElementById('social-note');
@@ -60,6 +61,7 @@ function setMode(next) {
   }
 
   show(error, '');
+  show(notice, '');
   show(socialNote, '');
 }
 
@@ -103,7 +105,14 @@ form.addEventListener('submit', async (event) => {
 
   submit.disabled = false;
 
-  if (result.ok) {
+  if (result.ok && result.pending) {
+    // Tài khoản đã có nhưng chưa xác thực email: chuyển sang tab đăng nhập, giữ
+    // sẵn email để lát bấm link xong chỉ còn gõ mật khẩu.
+    form.reset();
+    setMode('login');
+    field('email').value = email;
+    show(notice, result.message);
+  } else if (result.ok) {
     form.reset();
     refresh();
   } else {
@@ -156,9 +165,68 @@ function markActiveLocale(locale) {
   }
 }
 
+/*
+ * Nút Hiện/Ẩn trong mỗi ô mật khẩu. Nhớ ô nào đang hiện để đổi ngôn ngữ thì chỉ
+ * dịch lại chữ trên nút, không lật trạng thái của ô.
+ */
+const passwordToggles = [];
+
+for (const input of document.querySelectorAll('input[type=password]')) {
+  const wrap = document.createElement('span');
+  const toggle = document.createElement('button');
+
+  wrap.className = 'pw';
+  toggle.type = 'button';
+  toggle.className = 'pw__toggle';
+
+  const render = () => {
+    const visible = input.type === 'text';
+
+    toggle.textContent = window.i18n.t(visible ? 'Hide' : 'Show');
+    toggle.setAttribute('aria-label', window.i18n.t(visible ? 'Hide password' : 'Show password'));
+    toggle.setAttribute('aria-pressed', String(visible));
+  };
+
+  toggle.addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    render();
+    input.focus();
+  });
+
+  input.replaceWith(wrap);
+  wrap.append(input, toggle);
+  passwordToggles.push(render);
+}
+
+// Gửi form xong thì ô về lại dạng ẩn, không để mật khẩu lộ ra lần sau.
+form.addEventListener('reset', () => {
+  for (const input of form.querySelectorAll('.pw input')) input.type = 'password';
+  setTimeout(() => passwordToggles.forEach((render) => render()));
+});
+
+passwordToggles.forEach((render) => render());
+
+/*
+ * Tiến trình chính mở cửa sổ này vì phiên đã hết hạn: nói rõ lý do, để người
+ * dùng không tưởng mình vừa bị đăng xuất vô cớ.
+ */
+let sessionNotice = null;
+
+window.snapask.onAuthNotice(({ message }) => {
+  sessionNotice = message;
+  setMode('login');
+  show(notice, message);
+  field('email').focus();
+});
+
+// Gõ vào ô là người dùng đã đọc thông báo; thôi hiện lại nó khi đổi ngôn ngữ.
+form.addEventListener('input', () => { sessionNotice = null; }, { once: true });
+
 window.i18n.start((locale) => {
   markActiveLocale(locale);
+  passwordToggles.forEach((render) => render());
   setMode(mode);
+  if (sessionNotice) show(notice, sessionNotice);
   refresh();
 });
 

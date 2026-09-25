@@ -78,6 +78,14 @@ function settleStep() {
 }
 
 window.snapask.onEvent((event) => {
+  // Máy chủ báo id hội thoại ngay đầu lượt: nhớ luôn, để dù lượt này lỗi giữa
+  // chừng thì câu hỏi sau vẫn nối vào đúng hội thoại vừa tạo.
+  if (event.type === 'conversation') {
+    conversationId = event.conversation_id || conversationId;
+
+    return;
+  }
+
   // Mô hình đang gọi dịch vụ của khách: nói rõ bước nào, để người dùng hiểu vì
   // sao phải chờ thay vì nhìn một màn hình đứng im.
   if (event.type === 'tool') {
@@ -147,12 +155,22 @@ async function ask() {
   question.style.height = 'auto';
   setBusy(true);
 
-  await window.snapask.ask({
-    conversationId,
-    question: text,
-    // Ảnh chỉ đi kèm lượt đầu của mỗi hội thoại.
-    imageDataUrl: conversationId ? null : capture?.image,
-  });
+  try {
+    const result = await window.snapask.ask({
+      conversationId,
+      question: text,
+      // Ảnh chỉ đi kèm lượt đầu của mỗi hội thoại.
+      imageDataUrl: conversationId ? null : capture?.image,
+    });
+
+    if (!result?.ok) {
+      addMessage('error', result?.message || window.i18n.t('An error occurred.'));
+      setBusy(false);
+    }
+  } catch (error) {
+    addMessage('error', error.message || window.i18n.t('An error occurred.'));
+    setBusy(false);
+  }
 }
 
 send.addEventListener('click', ask);
@@ -179,6 +197,23 @@ window.addEventListener('keydown', (event) => {
 document.getElementById('close').addEventListener('click', () => {
   window.snapask.stop();
   window.snapask.hide();
+});
+
+// Lịch sử giờ nằm trong cửa sổ chính: mở đúng hội thoại đang dở ở đây để hỏi
+// tiếp với đầy đủ lịch sử, hoặc chỉ mở cửa sổ chính khi chưa hỏi gì.
+document.getElementById('history').addEventListener('click', () => {
+  window.snapask.openInWorkspace(conversationId);
+});
+
+/*
+ * Hội thoại đang mở ở đây vừa bị xoá bên workspace: thôi nối tiếp vào nó, nếu
+ * không lượt hỏi sau sẽ bị máy chủ từ chối vì hội thoại không còn tồn tại.
+ */
+window.snapask.onConversationDeleted(({ id }) => {
+  if (id !== conversationId) return;
+
+  conversationId = null;
+  addMessage('error', window.i18n.t('This conversation was deleted. Your next question starts a new one.'));
 });
 
 document.getElementById('recapture').addEventListener('click', () => {

@@ -7,6 +7,14 @@ use Illuminate\Validation\Rule;
 
 class ConnectorRequest extends FormRequest
 {
+    /** Túi lỗi riêng cho từng biểu mẫu sửa trên trang web; API trả JSON nên không bị ảnh hưởng. */
+    protected function prepareForValidation(): void
+    {
+        if ($this->route('connector') !== null) {
+            $this->errorBag = 'connector'.$this->route('connector')->id;
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -30,6 +38,7 @@ class ConnectorRequest extends FormRequest
             'url' => ['required', 'url:https', 'max:2048'],
             'auth_token' => ['nullable', 'string', 'max:2048'],
             'enabled' => ['boolean'],
+            'clear_token' => ['sometimes', 'boolean'],
         ];
     }
 

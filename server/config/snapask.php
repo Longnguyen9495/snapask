@@ -149,6 +149,18 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Xác thực email
+    |--------------------------------------------------------------------------
+    |
+    | Bật thì tài khoản mới phải bấm link trong email mới dùng được, cả trên web
+    | lẫn ứng dụng desktop. Mặc định chỉ bật ở production: máy dev thường không
+    | có SMTP, bắt xác thực ở đó chỉ làm chậm việc thử.
+    |
+    */
+    'verify_email' => (bool) env('SNAPASK_VERIFY_EMAIL', env('APP_ENV') === 'production'),
+
     'history_limit' => (int) env('SNAPASK_HISTORY_LIMIT', 12),
 
     'max_question_length' => (int) env('SNAPASK_MAX_QUESTION_LENGTH', 2000),

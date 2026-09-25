@@ -17,8 +17,29 @@ class LandingPageTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Chụp một vùng. Hỏi ngay tại chỗ.', false)
+            ->assertSee('Chụp bất kỳ đâu. Hỏi ngay tại đó.', false)
             ->assertSee('Đăng nhập', false);
+    }
+
+    #[Test]
+    public function landing_co_ban_thu_tuong_tac_khong_can_tai_du_lieu_len(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="try"', false)
+            ->assertSee('data-try-demo', false)
+            ->assertSee('data-demo-screen', false)
+            ->assertSee('data-demo-form', false)
+            ->assertSee('data-meaning-title=', false)
+            ->assertSee('data-demo-answer-title', false)
+            ->assertSee('Câu trả lời mô phỏng')
+            ->assertSee('Không có dữ liệu nào được tải lên');
+
+        $this->get('/en')
+            ->assertOk()
+            ->assertSee('Try the workflow yourself.')
+            ->assertSee('Sample answer')
+            ->assertSee('Nothing is uploaded and no account is required.');
     }
 
     #[Test]
@@ -31,8 +52,10 @@ class LandingPageTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertOk()
-            ->assertSee('Chụp một vùng. Hỏi ngay tại chỗ.', false)
-            ->assertSee(route('web.connectors.index'), false);
+            ->assertSee('Chụp bất kỳ đâu. Hỏi ngay tại đó.', false)
+            ->assertSee(route('dashboard'), false)
+            ->assertSee('Mở trang quản lý', false)
+            ->assertDontSee('href="'.route('login').'" class="btn', false);
     }
 
     #[Test]
@@ -41,6 +64,7 @@ class LandingPageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('id="features"', false)
+            ->assertSee('id="privacy"', false)
             ->assertSee('id="get"', false)
             ->assertSee('id="faq"', false);
     }

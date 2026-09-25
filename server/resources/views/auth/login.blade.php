@@ -1,46 +1,33 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', __('Sign in · SnapAsk'))
 @section('description', __('Sign in to SnapAsk to manage your connected services.'))
-@section('wrap-modifier', 'wrap--narrow')
 
 @section('content')
   <h1>{{ __('Sign in') }}</h1>
-  <p class="lead">{{ __('Manage connected services and check your quota.') }}</p>
+  <p class="lead">{{ __('Manage your conversations, AI models and connected services.') }}</p>
 
-  <form method="POST" action="{{ route('login.store') }}" class="stack card">
+  <form method="POST" action="{{ route('login.store') }}" class="form panel" novalidate>
     @csrf
 
-    @if ($errors->any())
-      <div class="errors">
-        <ul>
-          @foreach ($errors->all() as $message)
-            <li>{{ $message }}</li>
-          @endforeach
-        </ul>
-      </div>
-    @endif
+    <x-error-summary />
 
-    <label>
-      {{ __('Email') }}
-      <input type="email" name="email" value="{{ old('email') }}" autocomplete="username" required autofocus>
-    </label>
+    <x-form-field name="email" type="email" :label="__('Email')" :value="old('email')"
+                  autocomplete="username" required autofocus />
 
-    <label>
-      {{ __('Password') }}
-      <input type="password" name="password" autocomplete="current-password" required>
-    </label>
+    <x-form-field name="password" type="password" :label="__('Password')"
+                  autocomplete="current-password" required />
 
-    <label class="inline">
-      <input type="checkbox" name="remember" value="1">
+    <label class="check">
+      <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
       {{ __('Remember me on this device') }}
     </label>
 
-    <button type="submit">{{ __('Sign in') }}</button>
+    <button type="submit" class="btn">{{ __('Sign in') }}</button>
   </form>
 
-  <p class="note center" style="margin-top: 18px">
+  <p class="guest__foot">
     {{ __('No account yet?') }}
-    <a href="{{ route('register') }}" style="color: var(--accent)">{{ __('Create account') }}</a>
+    <a href="{{ route('register') }}">{{ __('Create account') }}</a>
   </p>
 @endsection

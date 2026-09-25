@@ -51,4 +51,22 @@ class McpConnector extends Model
     {
         return $this->enabled && filled($this->tools);
     }
+
+    /**
+     * Trạng thái để hiện lên trang quản lý, theo lần đồng bộ gần nhất.
+     *
+     * Không gọi thử dịch vụ lúc tải trang: một dịch vụ chậm sẽ kéo cả trang
+     * chậm theo. Muốn biết tình hình mới nhất thì bấm đồng bộ lại.
+     *
+     * @return 'disabled'|'error'|'ok'|'pending'
+     */
+    public function healthStatus(): string
+    {
+        return match (true) {
+            ! $this->enabled => 'disabled',
+            $this->last_error !== null => 'error',
+            filled($this->tools) => 'ok',
+            default => 'pending',
+        };
+    }
 }

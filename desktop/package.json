@@ -1,6 +1,6 @@
 {
     "name": "snapask-desktop",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.",
     "main": "src/main/main.js",
     "private": true,
@@ -8,15 +8,21 @@
         "start": "electron .",
         "dev": "electron . --dev",
         "dist": "npm run dist:win",
-        "dist:win": "electron-builder --win --publish never",
-        "dist:mac": "electron-builder --mac --publish never",
+        "dist:win": "electron-builder --win nsis --publish never",
+        "dist:mac": "electron-builder --mac dmg --publish never",
         "icons": "node build/make-icon.js",
-        "i18n:check": "node build/check-i18n.js"
+        "i18n:check": "node build/check-i18n.js && node build/find-i18n-keys.js",
+        "test": "node --test \"test/*.test.js\"",
+        "check": "node build/check-syntax.js && npm run i18n:check && npm test"
     },
     "build": {
         "appId": "vn.snapask.desktop",
         "productName": "SnapAsk",
-        "artifactName": "SnapAsk-${version}-${os}-${arch}.${ext}",
+        "artifactName": "SnapAsk-Setup-${version}-${os}-${arch}.${ext}",
+        "publish": {
+            "provider": "generic",
+            "url": "https://snapask.vn/updates"
+        },
         "directories": {
             "output": "dist",
             "buildResources": "build"
@@ -28,13 +34,21 @@
         "win": {
             "target": [
                 {
-                    "target": "portable",
+                    "target": "nsis",
                     "arch": [
                         "x64"
                     ]
                 }
             ],
             "icon": "build/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "SnapAsk",
+            "deleteAppDataOnUninstall": false
         },
         "mac": {
             "target": [
@@ -52,12 +66,15 @@
             "entitlementsInherit": "build/entitlements.mac.plist",
             "extendInfo": {
                 "NSScreenCaptureUsageDescription": "SnapAsk cần quyền ghi màn hình để chụp vùng bạn chọn.",
-                "LSUIElement": true
+                "LSUIElement": false
             }
         }
     },
     "devDependencies": {
         "electron": "^44.4.5",
         "electron-builder": "^26.15.3"
+    },
+    "dependencies": {
+        "electron-updater": "^6.6.2"
     }
 }

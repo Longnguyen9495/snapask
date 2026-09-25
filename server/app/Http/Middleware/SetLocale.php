@@ -16,7 +16,8 @@ use Symfony\Component\HttpFoundation\Response;
  *   2. users.locale        — lựa chọn đã lưu của tài khoản, theo họ sang cả app
  *                            desktop.
  *   3. cookie locale       — dành cho khách chưa đăng nhập.
- *   4. Accept-Language     — phỏng đoán cuối cùng từ trình duyệt.
+ *   4. Accept-Language     — chỉ với API, nơi app desktop gửi ngôn ngữ nó
+ *                            đang hiển thị.
  *
  * Hết cả bốn thì dùng APP_LOCALE.
  */
@@ -49,10 +50,15 @@ class SetLocale
             return $this->fromPath($request) ?? config('app.locale');
         }
 
+        /*
+         * Accept-Language chỉ tin ở API: ở đó app desktop gửi đúng ngôn ngữ
+         * người dùng đang xem. Trình duyệt thì chỉ khai ngôn ngữ của máy, mà
+         * sản phẩm muốn ai chưa tự chọn cũng thấy tiếng Việt trước.
+         */
         $candidates = [
             $request->user()?->locale,
             $request->cookie(self::COOKIE),
-            $this->fromHeader($request),
+            $request->is('api/*') ? $this->fromHeader($request) : null,
         ];
 
         foreach ($candidates as $candidate) {

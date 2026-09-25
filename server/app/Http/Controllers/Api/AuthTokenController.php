@@ -37,6 +37,17 @@ class AuthTokenController extends Controller
 
         $user = Auth::getProvider()->retrieveByCredentials($credentials);
 
+        // Chưa bấm link xác thực thì chưa cấp token. Gửi lại link ngay lúc này:
+        // người đang đứng ở cửa sổ đăng nhập là người cần nó nhất, và tuyến này
+        // đã bị giới hạn số lần gọi nên không thành cái máy gửi thư rác.
+        if (! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+
+            throw ValidationException::withMessages([
+                'email' => __('Verify your email first. We sent a new link to :email.', ['email' => $user->email]),
+            ]);
+        }
+
         // Mỗi máy giữ đúng một token: đăng nhập lại trên cùng máy thì thu hồi
         // token cũ, tránh để lại token mồ côi không ai gỡ được.
         $user->tokens()->where('name', $validated['device_name'])->delete();

@@ -1,14 +1,19 @@
 <?php
 
+use App\Http\Controllers\Web\AccountPageController;
 use App\Http\Controllers\Web\ConnectorPageController;
 use App\Http\Controllers\Web\ConversationPageController;
+use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DownloadFileController;
 use App\Http\Controllers\Web\DownloadPageController;
+use App\Http\Controllers\Web\EmailVerificationController;
 use App\Http\Controllers\Web\LandingController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\ProviderPageController;
 use App\Http\Controllers\Web\RegisterPageController;
 use App\Http\Controllers\Web\SessionController;
+use App\Http\Controllers\Web\SettingsPageController;
+use App\Http\Controllers\Web\UpdateFileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,6 +38,12 @@ Route::prefix('en')->group(function (): void {
 Route::get('download/{platform}', DownloadFileController::class)
     ->whereIn('platform', ['windows', 'mac'])
     ->name('download.file');
+
+// Kênh generic cho electron-updater: manifest latest*.yml và gói cài đặt đi
+// chung release disk, nhưng có đường dẫn ổn định để app tự kiểm tra phiên bản.
+Route::get('updates/{file}', UpdateFileController::class)
+    ->where('file', '[A-Za-z0-9._-]+')
+    ->name('updates.file');
 
 /*
  * Đổi ngôn ngữ. POST vì mỗi lần bấm là ghi cookie và ghi vào tài khoản; dùng GET
@@ -64,6 +75,28 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
 
+    /*
+     * Xác thực email. Nằm ngoài nhóm `verified` bên dưới, vì đây chính là chỗ
+     * người chưa xác thực được đẩy về.
+     */
+    Route::get('email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    Route::post('email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    /*
+     * Tổng quan là trang mặc định sau đăng nhập. Tên `dashboard` cũng là chỗ
+     * middleware `guest` đẩy người đã đăng nhập về khi họ mở lại /login.
+     */
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('account', AccountPageController::class)->name('web.account');
+    Route::get('settings', SettingsPageController::class)->name('web.settings');
+
     Route::get('providers', [ProviderPageController::class, 'index'])->name('web.providers.index');
     Route::post('providers', [ProviderPageController::class, 'store'])->name('web.providers.store');
     Route::put('providers/{provider}', [ProviderPageController::class, 'update'])->name('web.providers.update');
@@ -79,11 +112,18 @@ Route::middleware('auth')->group(function (): void {
     Route::get('conversations', [ConversationPageController::class, 'index'])->name('web.conversations.index');
     Route::get('conversations/{conversation}', [ConversationPageController::class, 'show'])->name('web.conversations.show');
     Route::get('conversations/{conversation}/image', [ConversationPageController::class, 'image'])->name('web.conversations.image');
+    Route::patch('conversations/{conversation}', [ConversationPageController::class, 'update'])->name('web.conversations.update');
     Route::delete('conversations/{conversation}', [ConversationPageController::class, 'destroy'])->name('web.conversations.destroy');
 
+    /*
+     * Thêm, sửa và đồng bộ đều gọi ra dịch vụ của khách, nên chịu chung một
+     * trần tần suất: bấm liên tục không biến máy chủ này thành công cụ dội
+     * request vào địa chỉ người khác.
+     */
     Route::get('connectors', [ConnectorPageController::class, 'index'])->name('web.connectors.index');
-    Route::post('connectors', [ConnectorPageController::class, 'store'])->name('web.connectors.store');
-    Route::put('connectors/{connector}', [ConnectorPageController::class, 'update'])->name('web.connectors.update');
-    Route::post('connectors/{connector}/sync', [ConnectorPageController::class, 'resync'])->name('web.connectors.resync');
+    Route::post('connectors', [ConnectorPageController::class, 'store'])->middleware('throttle:20,1')->name('web.connectors.store');
+    Route::put('connectors/{connector}', [ConnectorPageController::class, 'update'])->middleware('throttle:20,1')->name('web.connectors.update');
+    Route::post('connectors/{connector}/sync', [ConnectorPageController::class, 'resync'])->middleware('throttle:20,1')->name('web.connectors.resync');
+    Route::post('connectors/{connector}/toggle', [ConnectorPageController::class, 'toggle'])->name('web.connectors.toggle');
     Route::delete('connectors/{connector}', [ConnectorPageController::class, 'destroy'])->name('web.connectors.destroy');
 });

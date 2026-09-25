@@ -21,6 +21,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->sharePublicUrls();
+        $this->sharePortalShell();
+    }
+
+    /**
+     * Người dùng và hạn mức cho khung trang quản lý.
+     *
+     * Tính một lần cho layout thay vì để từng controller truyền vào: thanh trên
+     * cùng và sidebar hiện ở mọi trang, quên truyền ở một trang là vỡ khung.
+     */
+    private function sharePortalShell(): void
+    {
+        View::composer('layouts.app', function ($view): void {
+            $user = auth()->user();
+
+            $view->with([
+                'shellUser' => $user,
+                'shellQuota' => $user?->quotaSummary(),
+            ]);
+        });
     }
 
     /**

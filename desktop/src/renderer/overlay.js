@@ -322,7 +322,7 @@ function compose() {
 }
 
 async function finish(action) {
-  if (!selection || selection.w < MIN_SIZE || selection.h < MIN_SIZE) return;
+  if (!selection || selection.w < MIN_SIZE || selection.h < MIN_SIZE || sent) return;
 
   commitText();
   const dataUrl = compose();
@@ -342,15 +342,26 @@ async function finish(action) {
   }
 
   sent = true;
-  window.overlay.done({
-    dataUrl,
-    rect: {
-      x: Math.round(toCss(selection.x)),
-      y: Math.round(toCss(selection.y)),
-      width: Math.round(toCss(selection.w)),
-      height: Math.round(toCss(selection.h)),
-    },
-  });
+
+  try {
+    const result = await window.overlay.done({
+      dataUrl,
+      rect: {
+        x: Math.round(toCss(selection.x)),
+        y: Math.round(toCss(selection.y)),
+        width: Math.round(toCss(selection.w)),
+        height: Math.round(toCss(selection.h)),
+      },
+    });
+
+    if (!result?.ok) {
+      sent = false;
+      flash(result?.message || window.i18n.t('Could not process the screenshot.'));
+    }
+  } catch (error) {
+    sent = false;
+    flash(error.message || window.i18n.t('Could not process the screenshot.'));
+  }
 }
 
 /* ---------- chữ ---------- */

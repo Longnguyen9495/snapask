@@ -8,6 +8,17 @@ use Illuminate\Validation\Rule;
 
 class ProviderRequest extends FormRequest
 {
+    /**
+     * Mỗi biểu mẫu sửa có túi lỗi riêng, để lỗi của một nhà cung cấp hiện đúng
+     * dưới nhà cung cấp đó chứ không lẫn sang biểu mẫu thêm mới.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->route('provider') !== null) {
+            $this->errorBag = 'provider'.$this->route('provider')->id;
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -22,7 +33,9 @@ class ProviderRequest extends FormRequest
             ],
             // Bắt buộc HTTPS: khoá của khách đi kèm mọi lời gọi tới địa chỉ này.
             'base_url' => ['required', 'url:https', 'max:2048'],
-            'api_key' => ['required', 'string', 'max:2048'],
+            // Khi sửa, bỏ trống nghĩa là giữ khoá cũ: khoá không bao giờ được đổ
+            // ngược ra biểu mẫu, nên không thể bắt khách gõ lại mỗi lần sửa tên.
+            'api_key' => [$this->route('provider') === null ? 'required' : 'nullable', 'string', 'max:2048'],
             'api_format' => ['required', Rule::enum(ApiFormat::class)],
 
             // Danh sách mã mô hình, mỗi dòng một mã.

@@ -23,8 +23,6 @@ class ConversationPageTest extends TestCase
     #[Test]
     public function danh_sach_hien_hoi_thoai_cua_chinh_minh(): void
     {
-        // Khai rõ tiếng Việt: không khai thì middleware rơi về Accept-Language,
-        // mà client test mặc định gửi en_US.
         $user = User::factory()->create(['locale' => 'vi']);
         $conversation = Conversation::factory()->for($user)->create(['title' => 'Đọc hoá đơn']);
         Message::factory()->for($conversation)->count(3)->create();

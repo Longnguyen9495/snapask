@@ -24,7 +24,7 @@ class ConnectorController extends Controller
 
     public function store(ConnectorRequest $request, ConnectorSynchronizer $synchronizer): JsonResponse
     {
-        $connector = $request->user()->mcpConnectors()->create($request->validated());
+        $connector = $request->user()->mcpConnectors()->create($request->safe()->except('clear_token'));
 
         $synchronizer->sync($connector);
 
@@ -35,7 +35,7 @@ class ConnectorController extends Controller
     {
         abort_unless($connector->user_id === $request->user()->id, 404);
 
-        $connector->update($request->validated());
+        $connector->update($request->safe()->except('clear_token'));
 
         $synchronizer->sync($connector);
 

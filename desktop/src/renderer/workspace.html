@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src 'self'; style-src 'self'; script-src 'self'">
+<meta name="color-scheme" content="dark">
+<title>SnapAsk</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="workspace.css">
+</head>
+<body class="ws is-booting">
+  <a href="#composer-input" class="skip" data-i18n="Skip to the question box">Tới ô nhập câu hỏi</a>
+
+  <div class="shell" id="shell">
+    <!-- ============ Sidebar lịch sử ============ -->
+    <aside class="side" id="side" aria-label="Lịch sử hội thoại" data-i18n-aria-label="Conversation history">
+      <div class="side__top">
+        <span class="brand">
+          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#1a1816" stroke="#322d27"/>
+            <g fill="#e3a04b"><path d="M9 9h5v2.4H11.4V14H9zM23 9h-5v2.4h2.6V14H23zM9 23h5v-2.4H11.4V18H9zM23 23h-5v-2.4h2.6V18H23z"/></g>
+            <rect x="14.6" y="14.6" width="2.8" height="2.8" rx=".6" fill="#f3efe8"/>
+          </svg>
+          <span class="brand__name">SnapAsk</span>
+        </span>
+        <button type="button" class="icon-btn" id="collapse" aria-controls="side" aria-expanded="true"
+                aria-label="Thu gọn thanh bên" data-i18n-aria-label="Collapse sidebar"
+                title="Thu gọn thanh bên" data-i18n-title="Collapse sidebar"><span data-icon="panel-left"></span></button>
+      </div>
+
+      <div class="side__actions">
+        <button type="button" class="side-btn side-btn--primary" id="new-chat" title="Câu hỏi mới" data-i18n-title="New question">
+          <span data-icon="square-pen"></span>
+          <span class="side-btn__label" data-i18n="New question">Câu hỏi mới</span>
+          <kbd class="side-btn__kbd" data-shortcut="N"></kbd>
+        </button>
+        <button type="button" class="side-btn" id="capture" title="Chụp màn hình" data-i18n-title="Snap the screen">
+          <span data-icon="scan"></span>
+          <span class="side-btn__label" data-i18n="Snap the screen">Chụp màn hình</span>
+          <kbd class="side-btn__kbd" id="hotkey-kbd"></kbd>
+        </button>
+      </div>
+
+      <div class="search" role="search">
+        <label for="search" class="sr-only" data-i18n="Search conversations">Tìm hội thoại</label>
+        <span class="search__icon" data-icon="search" data-icon-size="16"></span>
+        <input type="search" id="search" class="search__input" autocomplete="off" spellcheck="false" maxlength="100"
+               placeholder="Tìm kiếm" data-i18n-placeholder="Search" aria-describedby="search-hint">
+        <kbd class="search__kbd" id="search-hint" data-shortcut="K"></kbd>
+      </div>
+
+      <nav class="history" id="history" aria-label="Hội thoại" data-i18n-aria-label="Conversations">
+        <div id="history-list" class="history__list"></div>
+        <div id="history-foot" class="history__foot" aria-live="polite"></div>
+      </nav>
+
+      <div class="side__foot">
+        <button type="button" class="account" id="account-btn" aria-haspopup="true" aria-expanded="false" aria-controls="account-menu">
+          <span class="avatar" id="account-initials" aria-hidden="true">·</span>
+          <span class="account__text">
+            <span class="account__name" id="account-name">&nbsp;</span>
+            <span class="account__quota" id="account-quota">&nbsp;</span>
+          </span>
+          <span data-icon="chevron-down" data-icon-size="16"></span>
+        </button>
+
+        <div class="popover popover--account" id="account-menu" hidden>
+          <div class="popover__head">
+            <strong id="menu-name"></strong>
+            <span id="menu-email"></span>
+            <span id="menu-verified" class="chip chip--ok" hidden><span data-icon="check" data-icon-size="12"></span><span data-i18n="Email verified">Đã xác thực email</span></span>
+          </div>
+          <dl class="popover__stats">
+            <div><dt data-i18n="Plan">Gói</dt><dd id="menu-plan"></dd></div>
+            <div><dt data-i18n="Asks left">Lượt còn lại</dt><dd id="menu-quota"></dd></div>
+            <div><dt data-i18n="AI model">Mô hình AI</dt><dd id="menu-model" class="mono"></dd></div>
+          </dl>
+          <button type="button" class="menu-item" id="menu-settings"><span data-icon="sliders" data-icon-size="16"></span><span data-i18n="Settings">Cài đặt</span><kbd data-shortcut=","></kbd></button>
+          <button type="button" class="menu-item" id="menu-providers"><span data-icon="cpu" data-icon-size="16"></span><span data-i18n="Manage AI models">Quản lý mô hình AI</span><span data-icon="external" data-icon-size="14"></span></button>
+          <button type="button" class="menu-item" id="menu-dashboard"><span data-icon="dashboard" data-icon-size="16"></span><span data-i18n="Open the management page">Mở trang quản lý</span><span data-icon="external" data-icon-size="14"></span></button>
+          <div class="menu-sep" role="separator"></div>
+          <button type="button" class="menu-item menu-item--danger" id="menu-logout"><span data-icon="log-out" data-icon-size="16"></span><span data-i18n="Sign out">Đăng xuất</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ Vùng chính ============ -->
+    <main class="main is-empty" id="main">
+      <div class="banner" id="banner" role="status" hidden>
+        <span data-icon="wifi-off" data-icon-size="16"></span>
+        <span id="banner-text"></span>
+        <button type="button" class="btn btn--ghost btn--sm" id="banner-retry" data-i18n="Try again">Thử lại</button>
+      </div>
+
+      <header class="conv-head" id="conv-head" hidden>
+        <div class="conv-head__text">
+          <h1 class="conv-head__title" id="conv-title" tabindex="-1"></h1>
+          <p class="conv-head__meta" id="conv-meta"></p>
+        </div>
+        <div class="conv-head__actions">
+          <button type="button" class="icon-btn" id="conv-menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="conv-menu"
+                  aria-label="Tuỳ chọn hội thoại" data-i18n-aria-label="Conversation options"
+                  title="Tuỳ chọn hội thoại" data-i18n-title="Conversation options"><span data-icon="more"></span></button>
+          <div class="popover popover--menu" id="conv-menu" hidden>
+            <button type="button" class="menu-item" id="conv-rename"><span data-icon="pencil" data-icon-size="16"></span><span data-i18n="Rename">Đổi tên</span></button>
+            <button type="button" class="menu-item" id="conv-web"><span data-icon="external" data-icon-size="16"></span><span data-i18n="Open on the web">Mở trên web</span></button>
+            <div class="menu-sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" id="conv-delete"><span data-icon="trash" data-icon-size="16"></span><span data-i18n="Delete">Xoá</span></button>
+          </div>
+        </div>
+      </header>
+
+      <div class="stage" id="stage">
+        <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+          <h1 class="welcome__title" id="welcome-title" tabindex="-1" data-i18n="Hello">Xin chào</h1>
+          <p class="welcome__lead" data-i18n="Type a question, or snap a region of your screen and ask about it.">Gõ câu hỏi, hoặc chụp một vùng màn hình rồi hỏi về nó.</p>
+        </section>
+
+        <div class="thread" id="thread" role="log" aria-labelledby="conv-title" hidden></div>
+      </div>
+
+      <form class="composer" id="composer" novalidate>
+        <div class="attachment" id="attachment" hidden>
+          <img class="attachment__thumb" id="attachment-img" alt="Ảnh vừa chụp" data-i18n-alt="The region you just snapped">
+          <div class="attachment__meta">
+            <span class="attachment__name" data-i18n="Screenshot">Ảnh chụp</span>
+            <span class="attachment__size" id="attachment-size"></span>
+            <span class="attachment__error" id="attachment-error" role="alert" hidden></span>
+          </div>
+          <button type="button" class="icon-btn icon-btn--sm" id="attachment-remove"
+                  aria-label="Bỏ ảnh" data-i18n-aria-label="Remove the screenshot"
+                  title="Bỏ ảnh" data-i18n-title="Remove the screenshot"><span data-icon="x" data-icon-size="16"></span></button>
+        </div>
+
+        <div class="composer__box">
+          <label for="composer-input" class="sr-only" data-i18n="Your question">Câu hỏi của bạn</label>
+          <textarea id="composer-input" class="composer__input" rows="1" maxlength="2000"
+                    placeholder="Hỏi SnapAsk bất cứ điều gì…" data-i18n-placeholder="Ask SnapAsk anything…"
+                    aria-describedby="composer-hint"></textarea>
+
+          <div class="composer__bar">
+            <button type="button" class="icon-btn" id="composer-capture"
+                    aria-label="Chụp màn hình" data-i18n-aria-label="Snap the screen"
+                    title="Chụp màn hình" data-i18n-title="Snap the screen"><span data-icon="scan"></span></button>
+            <span class="composer__hint" id="composer-hint" data-i18n="Enter to send · Shift + Enter for a new line">Enter để gửi · Shift + Enter để xuống dòng</span>
+            <span class="composer__count" id="composer-count" aria-hidden="true"></span>
+            <button type="submit" class="send" id="send" aria-label="Gửi" data-i18n-aria-label="Send" title="Gửi" data-i18n-title="Send">
+              <span data-icon="arrow-up"></span>
+            </button>
+            <button type="button" class="send send--stop" id="stop" hidden aria-label="Dừng" data-i18n-aria-label="Stop" title="Dừng" data-i18n-title="Stop">
+              <span data-icon="square" data-icon-size="14"></span>
+            </button>
+          </div>
+        </div>
+
+        <p class="composer__note" id="composer-note" hidden></p>
+      </form>
+
+      <div class="welcome__extras" id="welcome-extras">
+        <button type="button" class="chip-btn" id="welcome-capture"><span data-icon="scan" data-icon-size="16"></span><span data-i18n="Snap the screen">Chụp màn hình</span></button>
+        <button type="button" class="chip-btn" id="welcome-recent" hidden><span data-icon="clock" data-icon-size="16"></span><span data-i18n="Open latest conversation">Mở câu hỏi gần nhất</span></button>
+        <p class="welcome__hotkey" id="welcome-hotkey"></p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ Cài đặt ============ -->
+  <section class="settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="settings__panel">
+      <header class="settings__head">
+        <h2 id="settings-title" data-i18n="Settings">Cài đặt</h2>
+        <button type="button" class="icon-btn" id="settings-close" aria-label="Đóng cài đặt" data-i18n-aria-label="Close settings"><span data-icon="x"></span></button>
+      </header>
+
+      <div class="settings__body">
+        <section class="settings__group" aria-labelledby="set-general">
+          <h3 id="set-general" data-i18n="General">Chung</h3>
+
+          <div class="setting">
+            <div class="setting__text"><p class="setting__label" id="lbl-locale" data-i18n="Language">Ngôn ngữ</p></div>
+            <div class="segmented" role="radiogroup" aria-labelledby="lbl-locale">
+              <button type="button" role="radio" class="segmented__btn" data-locale="vi" lang="vi">Tiếng Việt</button>
+              <button type="button" role="radio" class="segmented__btn" data-locale="en" lang="en">English</button>
+            </div>
+          </div>
+
+          <div class="setting">
+            <div class="setting__text">
+              <label class="setting__label" for="set-login" data-i18n="Open SnapAsk when I sign in to my computer">Mở SnapAsk khi đăng nhập máy tính</label>
+              <p class="setting__hint" id="set-login-hint" data-i18n="Starts quietly in the tray, ready for the hotkey.">Khởi động âm thầm ở khay, sẵn sàng cho phím tắt.</p>
+            </div>
+            <input type="checkbox" class="switch" id="set-login" role="switch" aria-describedby="set-login-hint">
+          </div>
+
+          <div class="setting">
+            <div class="setting__text">
+              <label class="setting__label" for="set-close" data-i18n="When I close the window">Khi đóng cửa sổ</label>
+            </div>
+            <select class="select" id="set-close">
+              <option value="tray" data-i18n="Keep running in the tray">Tiếp tục chạy ở khay</option>
+              <option value="quit" data-i18n="Quit SnapAsk">Thoát SnapAsk</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings__group" aria-labelledby="set-capture">
+          <h3 id="set-capture" data-i18n="Capture">Chụp màn hình</h3>
+
+          <div class="setting">
+            <div class="setting__text">
+              <p class="setting__label" data-i18n="Capture hotkey">Phím tắt chụp</p>
+              <p class="setting__hint" data-i18n="Works anywhere, even when this window is hidden.">Dùng được ở mọi nơi, kể cả khi cửa sổ này đang ẩn.</p>
+            </div>
+            <kbd class="kbd-lg" id="set-hotkey"></kbd>
+          </div>
+
+          <div class="setting">
+            <div class="setting__text">
+              <label class="setting__label" for="set-destination" data-i18n="After a hotkey capture, open">Sau khi chụp bằng phím tắt, mở</label>
+              <p class="setting__hint" data-i18n="Snapping from this window always comes back here.">Chụp từ cửa sổ này thì luôn quay về đây.</p>
+            </div>
+            <select class="select" id="set-destination">
+              <option value="compact" data-i18n="Quick chat next to the region">Ô chat nhanh cạnh vùng chụp</option>
+              <option value="workspace" data-i18n="This workspace">Cửa sổ này</option>
+            </select>
+          </div>
+
+          <div class="setting">
+            <div class="setting__text">
+              <label class="setting__label" for="set-width" data-i18n="Maximum image width">Độ rộng ảnh tối đa</label>
+              <p class="setting__hint" data-i18n="Wider keeps small text sharp; narrower uses fewer tokens.">Rộng hơn giữ chữ nhỏ sắc nét; hẹp hơn tốn ít token hơn.</p>
+            </div>
+            <select class="select" id="set-width">
+              <option value="960">960 px</option>
+              <option value="1280">1280 px</option>
+              <option value="1600">1600 px</option>
+              <option value="1920">1920 px</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings__group" aria-labelledby="set-updates">
+          <h3 id="set-updates" data-i18n="Updates">Cập nhật</h3>
+
+          <div class="setting">
+            <div class="setting__text">
+              <p class="setting__label"><span data-i18n="Version">Phiên bản</span> <span class="mono" id="set-version"></span></p>
+              <p class="setting__hint" id="set-update-status" aria-live="polite"></p>
+            </div>
+            <div class="setting__actions">
+              <button type="button" class="btn btn--secondary btn--sm" id="set-update-check" data-i18n="Check for updates">Kiểm tra cập nhật</button>
+              <button type="button" class="btn btn--sm" id="set-update-install" hidden data-i18n="Restart and install">Khởi động lại và cài đặt</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings__group" aria-labelledby="set-advanced">
+          <h3 id="set-advanced" data-i18n="Advanced">Nâng cao</h3>
+
+          <form class="setting setting--stack" id="set-server-form" novalidate>
+            <div class="setting__text">
+              <label class="setting__label" for="set-server" data-i18n="Server address">Địa chỉ máy chủ</label>
+              <p class="setting__hint setting__hint--warn" id="set-server-hint">
+                <span data-icon="alert" data-icon-size="14"></span>
+                <span data-i18n="Only change this if your organisation runs its own SnapAsk server. You will be signed out, and your sign-in goes to the new address.">Chỉ đổi khi tổ chức của bạn tự chạy máy chủ SnapAsk. Bạn sẽ bị đăng xuất, và thông tin đăng nhập sẽ gửi tới địa chỉ mới.</span>
+              </p>
+            </div>
+            <div class="setting__row">
+              <input type="url" class="input mono" id="set-server" spellcheck="false" autocomplete="off" aria-describedby="set-server-hint set-server-error">
+              <button type="submit" class="btn btn--secondary btn--sm" data-i18n="Save">Lưu</button>
+            </div>
+            <p class="field-error" id="set-server-error" role="alert" hidden></p>
+          </form>
+
+          <div class="setting">
+            <div class="setting__text">
+              <p class="setting__label" data-i18n="Reset settings">Đặt lại cài đặt</p>
+              <p class="setting__hint" data-i18n="Back to the defaults. You stay signed in.">Trở về mặc định. Bạn vẫn đăng nhập.</p>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" id="set-reset" data-i18n="Reset">Đặt lại</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Hộp thoại ============ -->
+  <dialog class="dialog" id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <form method="dialog">
+      <div class="dialog__body">
+        <span class="dialog__icon" data-icon="trash"></span>
+        <div>
+          <h2 id="confirm-title"></h2>
+          <p id="confirm-text"></p>
+        </div>
+      </div>
+      <div class="dialog__actions">
+        <button type="submit" value="cancel" class="btn btn--secondary" id="confirm-cancel" data-i18n="Cancel">Huỷ</button>
+        <button type="submit" value="accept" class="btn btn--danger" id="confirm-accept"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="rename" aria-labelledby="rename-title">
+    <form id="rename-form" novalidate>
+      <div class="dialog__body dialog__body--form">
+        <h2 id="rename-title" data-i18n="Rename conversation">Đổi tên hội thoại</h2>
+        <label class="field-label" for="rename-input" data-i18n="Title">Tiêu đề</label>
+        <input type="text" class="input" id="rename-input" maxlength="120" autocomplete="off" aria-describedby="rename-error">
+        <p class="field-error" id="rename-error" role="alert" hidden></p>
+      </div>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn--secondary" id="rename-cancel" data-i18n="Cancel">Huỷ</button>
+        <button type="submit" class="btn" id="rename-save" data-i18n="Save">Lưu</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <p class="sr-only" id="live" aria-live="polite"></p>
+  <p class="sr-only" id="alert" role="alert"></p>
+
+  <script src="i18n.js"></script>
+  <script src="icons.js"></script>
+  <script src="lib/markdown.js"></script>
+  <script src="lib/history.js"></script>
+  <script src="lib/stream.js"></script>
+  <script src="workspace.js"></script>
+</body>
+</html>

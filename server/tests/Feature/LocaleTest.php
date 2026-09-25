@@ -17,7 +17,7 @@ class LocaleTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Chụp một vùng. Hỏi ngay tại chỗ.', false)
+            ->assertSee('Chụp bất kỳ đâu. Hỏi ngay tại đó.', false)
             ->assertSee('<html lang="vi"', false);
     }
 
@@ -26,7 +26,7 @@ class LocaleTest extends TestCase
     {
         $this->get('/en')
             ->assertOk()
-            ->assertSee('Snap a region. Ask right there.', false)
+            ->assertSee('Capture anywhere. Ask right there.', false)
             ->assertSee('<html lang="en"', false);
     }
 
@@ -50,7 +50,7 @@ class LocaleTest extends TestCase
         $this->actingAs($user)
             ->get('/en')
             ->assertOk()
-            ->assertSee('Snap a region. Ask right there.', false);
+            ->assertSee('Capture anywhere. Ask right there.', false);
     }
 
     #[Test]
@@ -102,7 +102,7 @@ class LocaleTest extends TestCase
     }
 
     #[Test]
-    public function accept_language_duoc_dung_khi_chua_co_lua_chon_nao(): void
+    public function chua_chon_gi_thi_la_tieng_viet_du_trinh_duyet_khai_tieng_anh(): void
     {
         $user = User::factory()->create(['locale' => null]);
 
@@ -110,7 +110,7 @@ class LocaleTest extends TestCase
             ->withHeader('Accept-Language', 'en-GB,en;q=0.9')
             ->get('/connectors')
             ->assertOk()
-            ->assertSee('Services for the AI to look up', false);
+            ->assertSee('Dịch vụ cho AI tra cứu', false);
     }
 
     #[Test]

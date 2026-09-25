@@ -12,7 +12,11 @@
  *   2. khoá "serverUrl" trong snapask.json ở thư mục userData
  *   3. hằng số dưới đây
  */
-const DEFAULT_SERVER_URL = 'http://localhost:8000';
+const DEFAULT_SERVER_URL = 'http://snapask.local';
+const LEGACY_SERVER_URLS = new Set([
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+]);
 
 /**
  * Phím tắt chụp màn hình.
@@ -29,5 +33,6 @@ const DEFAULT_HOTKEY = process.platform === 'darwin' ? 'Cmd+Shift+2' : 'Ctrl+Alt
 
 module.exports = {
   serverUrl: () => process.env.SNAPASK_SERVER_URL || DEFAULT_SERVER_URL,
+  normalizeServerUrl: (url) => LEGACY_SERVER_URLS.has(url) ? DEFAULT_SERVER_URL : url,
   hotkey: () => process.env.SNAPASK_HOTKEY || DEFAULT_HOTKEY,
 };

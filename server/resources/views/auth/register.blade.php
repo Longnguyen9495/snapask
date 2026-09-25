@@ -1,51 +1,32 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', __('Create account · SnapAsk'))
 @section('description', __('Create a SnapAsk account and try it free.'))
-@section('wrap-modifier', 'wrap--narrow')
 
 @section('content')
   <h1>{{ __('Create account') }}</h1>
   <p class="lead">{{ __('Free to try, no card required.') }}</p>
 
-  <form method="POST" action="{{ route('register.store') }}" class="stack card">
+  <form method="POST" action="{{ route('register.store') }}" class="form panel" novalidate>
     @csrf
 
-    @if ($errors->any())
-      <div class="errors">
-        <ul>
-          @foreach ($errors->all() as $message)
-            <li>{{ $message }}</li>
-          @endforeach
-        </ul>
-      </div>
-    @endif
+    <x-error-summary />
 
-    <label>
-      {{ __('Your name') }}
-      <input type="text" name="name" value="{{ old('name') }}" required autofocus>
-    </label>
+    <x-form-field name="name" :label="__('Your name')" :value="old('name')" autocomplete="name" required autofocus />
 
-    <label>
-      {{ __('Email') }}
-      <input type="email" name="email" value="{{ old('email') }}" autocomplete="username" required>
-    </label>
+    <x-form-field name="email" type="email" :label="__('Email')" :value="old('email')" autocomplete="username" required />
 
-    <label>
-      {{ __('Password') }}
-      <input type="password" name="password" autocomplete="new-password" required>
-    </label>
+    <x-form-field name="password" type="password" :label="__('Password')" :hint="__('At least 8 characters.')"
+                  autocomplete="new-password" required />
 
-    <label>
-      {{ __('Confirm password') }}
-      <input type="password" name="password_confirmation" autocomplete="new-password" required>
-    </label>
+    <x-form-field name="password_confirmation" type="password" :label="__('Confirm password')"
+                  autocomplete="new-password" required />
 
-    <button type="submit">{{ __('Create account') }}</button>
+    <button type="submit" class="btn">{{ __('Create account') }}</button>
   </form>
 
-  <p class="note center" style="margin-top: 18px">
+  <p class="guest__foot">
     {{ __('Already have an account?') }}
-    <a href="{{ route('login') }}" style="color: var(--accent)">{{ __('Sign in') }}</a>
+    <a href="{{ route('login') }}">{{ __('Sign in') }}</a>
   </p>
 @endsection

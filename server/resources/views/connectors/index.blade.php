@@ -2,129 +2,197 @@
 
 @section('title', __('Connected services · SnapAsk'))
 @section('description', __('Declare a service so the AI reads real data instead of guessing from the screenshot.'))
+@section('section', __('Connected services'))
 
 @section('content')
-  <div class="row">
-    <div>
-      <h1>{{ __('Services for the AI to look up') }}</h1>
-      <p class="note tabular" style="margin-top: 6px">
-        {{ $quota['own_key']
-            ? __(':plan plan · your own key, no ask limit', ['plan' => $quota['plan']])
-            : __(':plan plan · :remaining of :limit asks left this month', [
-                'plan' => $quota['plan'],
-                'remaining' => $quota['remaining'],
-                'limit' => $quota['limit'],
-            ]) }}
-      </p>
-    </div>
+  @php $createErrors = $errors->getBag('default')->any(); @endphp
 
-    <form method="POST" action="{{ route('logout') }}">
-      @csrf
-      <button type="submit" class="btn--quiet">{{ __('Sign out') }}</button>
-    </form>
-  </div>
+  <x-page-header :title="__('Connected services')" :eyebrow="__('Services for the AI to look up')"
+                 :lead="__('Declare a service so the AI reads real data instead of guessing from the screenshot.')">
+    <x-slot:actions>
+      <a href="#add-service" class="btn" data-open-details="add-service"><x-icon name="plus" :size="16" />{{ __('Add a service') }}</a>
+    </x-slot:actions>
+  </x-page-header>
 
-  @if (session('status'))
-    <p class="flash">{{ session('status') }}</p>
-  @endif
-
-  @forelse ($connectors as $connector)
-    <article class="card">
-      <div class="row" style="margin-bottom: 4px; align-items: baseline">
-        <h2>{{ $connector->name }} <span class="tag">{{ $connector->slug }}</span></h2>
-        @unless ($connector->enabled)
-          <span class="tag">{{ __('disabled') }}</span>
-        @endunless
+  @if ($summary['total'] > 0)
+    <section class="panel stats summary-strip" aria-label="{{ __('Service health') }}">
+      <div class="stat">
+        <p class="stat__label"><x-icon name="plug" :size="15" />{{ __('Connected') }}</p>
+        <p class="stat__value tabular">{{ $summary['total'] }}</p>
       </div>
-
-      <p class="note" style="word-break: break-all">{{ $connector->url }}</p>
-
-      @if ($connector->last_error)
-        <p class="note status--bad">{{ __('Could not connect: :error', ['error' => $connector->last_error]) }}</p>
-      @elseif (filled($connector->tools))
-        <p class="note status--ok">
-          {{ trans_choice(':count tool · synced :time|:count tools · synced :time', count($connector->tools), [
-              'count' => count($connector->tools),
-              'time' => $connector->synced_at?->diffForHumans(),
-          ]) }}
-        </p>
-        <div class="tools">
-          @foreach ($connector->tools as $tool)
-            <span class="tag">{{ $tool['name'] }}</span>
-          @endforeach
-        </div>
-      @else
-        <p class="note">{{ __('No tools read yet.') }}</p>
-      @endif
-
-      <div class="actions">
-        <form method="POST" action="{{ route('web.connectors.resync', $connector) }}">
-          @csrf
-          <button type="submit" class="btn--quiet">{{ __('Re-sync') }}</button>
-        </form>
-
-        <form method="POST"
-              action="{{ route('web.connectors.destroy', $connector) }}"
-              onsubmit="return confirm('{{ __('Delete :name? The AI will no longer be able to look up data in this service.', ['name' => $connector->name]) }}')">
-          @csrf
-          @method('DELETE')
-          <button type="submit" class="btn--quiet btn--danger">{{ __('Delete') }}</button>
-        </form>
+      <div class="stat">
+        <p class="stat__label"><x-icon name="check-circle" :size="15" />{{ __('Healthy') }}</p>
+        <p class="stat__value tabular">{{ $summary['ok'] }}</p>
       </div>
-    </article>
-  @empty
+      <div class="stat">
+        <p class="stat__label"><x-icon name="alert" :size="15" />{{ __('Failing') }}</p>
+        <p class="stat__value tabular">{{ $summary['error'] }}</p>
+      </div>
+      <div class="stat">
+        <p class="stat__label"><x-icon name="ban" :size="15" />{{ __('Disabled') }}</p>
+        <p class="stat__value tabular">{{ $summary['disabled'] }}</p>
+      </div>
+    </section>
+
+    <ul class="list" aria-label="{{ __('Your services') }}">
+      @foreach ($connectors as $connector)
+        @php
+          $status = $connector->healthStatus();
+          $bag = 'connector'.$connector->id;
+          $editErrors = $errors->getBag($bag)->any();
+          $prefix = 'connector-'.$connector->id.'-';
+          $toolCount = count($connector->tools ?? []);
+        @endphp
+        <li class="option" id="connector-{{ $connector->id }}">
+          <div class="option__body">
+            <div class="option__head">
+              <h3>{{ $connector->name }}</h3>
+              <span class="tag">{{ $connector->slug }}</span>
+              @switch($status)
+                @case('ok') <x-status-badge status="ok">{{ __('Healthy') }}</x-status-badge> @break
+                @case('error') <x-status-badge status="error">{{ __('Failing') }}</x-status-badge> @break
+                @case('disabled') <x-status-badge status="disabled">{{ __('Disabled') }}</x-status-badge> @break
+                @default <x-status-badge>{{ __('Not synced yet') }}</x-status-badge>
+              @endswitch
+            </div>
+
+            <p class="option__meta break" title="{{ $connector->url }}">{{ \Illuminate\Support\Str::limit($connector->url, 80) }}</p>
+            <p class="option__meta tabular">
+              {{ trans_choice(':count tool|:count tools', $toolCount, ['count' => $toolCount]) }}
+              ·
+              @if ($connector->synced_at)
+                {{ __('synced') }} <x-time :at="$connector->synced_at" />
+              @else
+                {{ __('never synced') }}
+              @endif
+              · {{ filled($connector->auth_token) ? __('token saved') : __('no token') }}
+            </p>
+
+            @if ($connector->last_error)
+              <div class="status-note" role="note">
+                <x-icon name="alert" :size="16" />
+                <div>
+                  <p>{{ __('Could not connect: :error', ['error' => $connector->last_error]) }}</p>
+                  <p>{{ __('Check that the address is reachable over HTTPS and that the token is still valid, then sync again.') }}</p>
+                </div>
+              </div>
+            @endif
+
+            @if ($toolCount > 0)
+              <details class="disclosure disclosure--quiet option__edit">
+                <summary>{{ trans_choice('Show :count tool|Show all :count tools', $toolCount, ['count' => $toolCount]) }}<x-icon name="chevron-down" :size="14" class="icon--chevron" /></summary>
+                <div class="disclosure__body chips">
+                  @foreach ($connector->tools as $tool)
+                    <span class="tag" title="{{ $tool['description'] ?? '' }}">{{ $tool['name'] }}</span>
+                  @endforeach
+                </div>
+              </details>
+            @endif
+
+            <details class="disclosure disclosure--quiet option__edit" @if ($editErrors) open @endif>
+              <summary><x-icon name="pencil" :size="14" />{{ __('Edit :name', ['name' => $connector->name]) }}<x-icon name="chevron-down" :size="14" class="icon--chevron" /></summary>
+              <div class="disclosure__body">
+                <form method="POST" action="{{ route('web.connectors.update', $connector) }}" class="form" novalidate
+                      data-pending="{{ __('Saving and connecting…') }}">
+                  @csrf
+                  @method('PUT')
+                  <x-error-summary :bag="$bag" :prefix="$prefix" />
+
+                  <div class="form__grid">
+                    <x-form-field name="name" :id="$prefix.'name'" :bag="$bag" :label="__('Display name')"
+                                  :value="$editErrors ? old('name') : $connector->name" required />
+                    <x-form-field name="slug" :id="$prefix.'slug'" :bag="$bag" :label="__('Short code')"
+                                  :value="$editErrors ? old('slug') : $connector->slug"
+                                  :hint="__('Lowercase letters, digits, - and _.')" pattern="[a-z0-9_-]+" required />
+                    <x-form-field name="url" type="url" :id="$prefix.'url'" :bag="$bag" :label="__('MCP address')" :full="true"
+                                  :value="$editErrors ? old('url') : $connector->url"
+                                  :hint="__('Must be https — the token travels with every call.')" required />
+                    {{-- Không đổ lại token cũ: token là bí mật, không nên nằm trong HTML. --}}
+                    <x-form-field name="auth_token" type="password" :id="$prefix.'auth_token'" :bag="$bag" :full="true"
+                                  :label="__('Access token')" :optional="true" autocomplete="off"
+                                  :hint="__('Leave blank to keep the saved token.')" />
+                    @if (filled($connector->auth_token))
+                      <label class="check field--full">
+                        <input type="checkbox" name="clear_token" value="1">
+                        {{ __('Remove the saved token') }}
+                      </label>
+                    @endif
+                  </div>
+
+                  <div class="form__actions">
+                    <button type="submit" class="btn">{{ __('Save and reconnect') }}</button>
+                  </div>
+                </form>
+              </div>
+            </details>
+          </div>
+
+          <div class="option__side">
+            <form method="POST" action="{{ route('web.connectors.resync', $connector) }}" data-pending="{{ __('Syncing :name…', ['name' => $connector->name]) }}">
+              @csrf
+              <button type="submit" class="btn btn--secondary btn--sm" aria-label="{{ __('Sync :name again', ['name' => $connector->name]) }}">
+                <x-icon name="refresh" :size="15" />{{ __('Re-sync') }}
+              </button>
+            </form>
+
+            <form method="POST" action="{{ route('web.connectors.toggle', $connector) }}">
+              @csrf
+              <button type="submit" class="btn btn--ghost btn--sm" aria-label="{{ $connector->enabled ? __('Turn off :name', ['name' => $connector->name]) : __('Turn on :name', ['name' => $connector->name]) }}">
+                <x-icon name="power" :size="15" />{{ $connector->enabled ? __('Turn off') : __('Turn on') }}
+              </button>
+            </form>
+
+            <form method="POST" action="{{ route('web.connectors.destroy', $connector) }}"
+                  data-confirm="{{ __('Delete :name? The AI will no longer be able to look up data in this service.', ['name' => $connector->name]) }}"
+                  data-confirm-title="{{ __('Delete this service?') }}"
+                  data-confirm-action="{{ __('Delete service') }}">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="btn btn--ghost btn--icon btn--sm" aria-label="{{ __('Delete :name', ['name' => $connector->name]) }}">
+                <x-icon name="trash" :size="15" />
+              </button>
+            </form>
+          </div>
+        </li>
+      @endforeach
+    </ul>
+  @else
     {{--
       Trạng thái rỗng giải thích luôn dịch vụ này để làm gì. Một dòng "chưa có gì"
       không nói cho người mới biết bước tiếp theo là gì.
     --}}
-    <div class="card" style="padding: 30px 26px">
-      <h2>{{ __('No service connected yet') }}</h2>
-      <p class="note" style="margin-top: 8px; max-width: 54ch">
-        {{ __('Right now the AI only reads what it can see in the screenshot. Connect a service that speaks MCP and it can look up real data — stock, orders, appointments — while it answers.') }}
-      </p>
-      <p class="note" style="margin-top: 10px">
-        {!! __('The address must be :scheme, because the token travels with every call.', ['scheme' => '<code>https</code>']) !!}
-      </p>
-    </div>
-  @endforelse
+    <x-empty-state :title="__('No service connected yet')" icon="plug">
+      {{ __('Right now the AI only reads what it can see in the screenshot. Connect a service that speaks MCP and it can look up real data — stock, orders, appointments — while it answers.') }}
+    </x-empty-state>
+  @endif
 
-  <h2 style="margin: 32px 0 12px">{{ __('Add a service') }}</h2>
+  <section class="section" aria-labelledby="add-service-title">
+    <details class="disclosure disclosure--panel" id="add-service" @if ($createErrors || $summary['total'] === 0) open @endif>
+      <summary>
+        <x-icon name="plus" :size="16" />
+        <span id="add-service-title">{{ __('Add a service') }}</span>
+        <x-icon name="chevron-down" :size="16" class="icon--chevron" />
+      </summary>
+      <div class="disclosure__body">
+        <form method="POST" action="{{ route('web.connectors.store') }}" class="form" novalidate data-pending="{{ __('Saving and connecting…') }}">
+          @csrf
+          <x-error-summary />
 
-  <form method="POST" action="{{ route('web.connectors.store') }}" class="stack card">
-    @csrf
+          <div class="form__grid">
+            <x-form-field name="name" :label="__('Display name')" :value="old('name')" required />
+            <x-form-field name="slug" :label="__('Short code')" :value="old('slug')"
+                          :hint="__('Lowercase letters, digits, - and _. The AI sees it as the service name.')" pattern="[a-z0-9_-]+" required />
+            <x-form-field name="url" type="url" :label="__('MCP address')" :full="true" :value="old('url')"
+                          :hint="__('Must be https — the token travels with every call.')" required />
+            <x-form-field name="auth_token" type="password" :label="__('Access token')" :optional="true" :full="true" autocomplete="off"
+                          :hint="__('Only if the service requires one. Stored encrypted and never shown again.')" />
+          </div>
 
-    @if ($errors->any())
-      <div class="errors">
-        <ul>
-          @foreach ($errors->all() as $message)
-            <li>{{ $message }}</li>
-          @endforeach
-        </ul>
+          <div class="form__actions">
+            <button type="submit" class="btn"><x-icon name="plug" :size="16" />{{ __('Add and connect') }}</button>
+          </div>
+        </form>
       </div>
-    @endif
-
-    <label>
-      {{ __('Display name') }}
-      <input type="text" name="name" value="{{ old('name') }}" placeholder="{{ __('Warehouse') }}" required>
-    </label>
-
-    <label>
-      {{ __('Short code') }}
-      <input type="text" name="slug" value="{{ old('slug') }}" placeholder="{{ __('stock') }}"
-             pattern="[a-z0-9_-]+" required>
-    </label>
-
-    <label>
-      {{ __('MCP address') }}
-      <input type="url" name="url" value="{{ old('url') }}" placeholder="https://…/mcp" required>
-    </label>
-
-    <label>
-      {{ __('Access token (if the service requires one)') }}
-      {{-- Không đổ lại giá trị cũ: token là bí mật, không nên nằm trong HTML. --}}
-      <input type="password" name="auth_token" autocomplete="off">
-    </label>
-
-    <button type="submit">{{ __('Add and connect') }}</button>
-  </form>
+    </details>
+  </section>
 @endsection

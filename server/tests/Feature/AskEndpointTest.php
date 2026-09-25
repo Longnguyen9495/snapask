@@ -178,4 +178,69 @@ class AskEndpointTest extends TestCase
         $this->assertStringContainsString('"type":"error"', $content);
         $this->assertStringNotContainsString('sk-that-cua-he-thong', $content);
     }
+
+    #[Test]
+    public function hoi_bang_chu_khong_kem_anh_van_tao_hoi_thoai(): void
+    {
+        $this->fakeProviderStream();
+        $user = User::factory()->create();
+
+        $content = $this->actingAs($user)
+            ->postJson(route('ask'), ['question' => "  Viết giúp tôi\nmột email xin nghỉ  "])
+            ->assertOk()
+            ->streamedContent();
+
+        $conversation = Conversation::sole();
+        $this->assertStringContainsString('"conversation_id":'.$conversation->id, $content);
+        // id hội thoại được báo trước chữ đầu tiên, để lỗi giữa chừng không làm mất nó.
+        $this->assertLessThan(
+            strpos($content, '"type":"delta"'),
+            strpos($content, '{"type":"conversation","conversation_id":'.$conversation->id.'}'),
+        );
+        $this->assertSame('Viết giúp tôi một email xin nghỉ', $conversation->title);
+        $this->assertNull($conversation->image_path);
+        $this->assertNull($conversation->image_width);
+
+        Http::assertSent(fn ($request): bool => is_string($request['messages'][1]['content']));
+    }
+
+    #[Test]
+    public function anh_gui_len_duoc_ghi_lai_kich_thuoc(): void
+    {
+        $this->fakeProviderStream();
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('ask'), ['question' => 'Gì đây?', 'image' => self::PIXEL])
+            ->assertOk()
+            ->streamedContent();
+
+        $conversation = Conversation::sole();
+        $this->assertSame(1, $conversation->image_width);
+        $this->assertSame(1, $conversation->image_height);
+    }
+
+    #[Test]
+    public function hoi_tiep_day_hoi_thoai_len_dau_lich_su(): void
+    {
+        $this->fakeProviderStream();
+        $user = User::factory()->create();
+
+        $this->travelTo(now()->subDays(2));
+        $older = Conversation::factory()->for($user)->create();
+        $this->travelBack();
+        $this->travelTo(now()->subHour());
+        $newer = Conversation::factory()->for($user)->create();
+        $this->travelBack();
+
+        $this->actingAs($user)
+            ->postJson(route('ask'), ['question' => 'Còn gì nữa?', 'conversation_id' => $older->id])
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertTrue($older->fresh()->updated_at->greaterThan($newer->fresh()->updated_at));
+
+        $this->getJson(route('conversations.index'))
+            ->assertJsonPath('data.0.id', $older->id)
+            ->assertJsonPath('data.0.messages_count', 2);
+    }
 }

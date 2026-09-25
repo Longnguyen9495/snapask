@@ -22,15 +22,20 @@ Route::post('auth/token', [AuthTokenController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('auth.token.store');
 
-Route::middleware('auth:sanctum')->group(function (): void {
-    Route::delete('auth/token', [AuthTokenController::class, 'destroy'])->name('auth.token.destroy');
+// Đăng xuất nằm ngoài `verified`: ai cầm token cũng phải thu hồi được nó.
+Route::delete('auth/token', [AuthTokenController::class, 'destroy'])
+    ->middleware('auth:sanctum')
+    ->name('auth.token.destroy');
 
+Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::get('me', function (Request $request) {
         return response()->json([
             // `locale` đi kèm để ứng dụng desktop mở lên đúng thứ tiếng người
             // dùng đã chọn, kể cả khi họ chọn trên trang web.
-            'user' => $request->user()->only(['id', 'name', 'email', 'locale']),
+            'user' => $request->user()->profileSummary(),
             'quota' => $request->user()->quotaSummary(),
+            // Thêm vào cho workspace 0.3.0; bản cũ bỏ qua trường lạ.
+            'setup' => $request->user()->activeSetup(),
         ]);
     })->name('me');
 
@@ -48,8 +53,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         $request->user()->forceFill($data)->save();
 
         return response()->json([
-            'user' => $request->user()->only(['id', 'name', 'email', 'locale']),
+            'user' => $request->user()->profileSummary(),
             'quota' => $request->user()->quotaSummary(),
+            'setup' => $request->user()->activeSetup(),
         ]);
     })->name('me.update');
 
@@ -65,5 +71,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('conversations', [ConversationController::class, 'index'])->name('conversations.index');
     Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->name('conversations.show');
+    Route::patch('conversations/{conversation}', [ConversationController::class, 'update'])->name('conversations.update');
+
+    // Ảnh đi qua token Sanctum trong header, không bao giờ qua tham số URL: link
+    // có token dễ lọt vào nhật ký máy chủ, lịch sử trình duyệt và ảnh chụp màn hình.
+    Route::get('conversations/{conversation}/image', [ConversationController::class, 'image'])->name('conversations.image');
     Route::delete('conversations/{conversation}', [ConversationController::class, 'destroy'])->name('conversations.destroy');
 });

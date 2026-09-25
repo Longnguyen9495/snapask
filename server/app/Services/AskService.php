@@ -15,14 +15,15 @@ use InvalidArgumentException;
 class AskService
 {
     private const SYSTEM_PROMPT = <<<'TEXT'
-    Bạn là trợ lý đọc ảnh chụp màn hình. Người dùng khoanh một vùng trên màn hình
-    của họ rồi hỏi về đúng vùng đó.
+    Bạn là trợ lý SnapAsk. Người dùng thường khoanh một vùng trên màn hình của họ
+    rồi hỏi về đúng vùng đó; đôi khi họ chỉ gõ câu hỏi, không kèm ảnh.
 
     Quy tắc:
     - Trả lời bằng ngôn ngữ của câu hỏi. Câu hỏi quá ngắn hoặc không rõ là thứ
       tiếng nào thì dùng :fallback.
-    - Bám vào những gì thật sự nhìn thấy trong ảnh. Không đoán thêm chi tiết.
+    - Khi có ảnh: bám vào những gì thật sự nhìn thấy trong ảnh, không đoán thêm chi tiết.
     - Nếu ảnh mờ hoặc thiếu phần cần thiết, nói thẳng là không đọc được thay vì suy diễn.
+    - Khi không có ảnh: trả lời như một trợ lý thông thường, không nhắc tới ảnh.
     - Trả lời gọn, đi thẳng vào việc. Dùng markdown khi thật sự giúp dễ đọc.
     - Nếu ảnh chứa thông tin nhạy cảm (mật khẩu, số thẻ), trả lời câu hỏi nhưng không chép lại nguyên văn các giá trị đó.
     TEXT;
@@ -54,10 +55,10 @@ class AskService
     /**
      * Chạy trọn một lượt hỏi, nhả tiến trình ra ngoài rồi ghi lại kết quả.
      *
-     * Mỗi giá trị nhả ra là một sự kiện: `delta` cho chữ mới, `tool` cho bước
-     * đang gọi dịch vụ của khách.
+     * Mỗi giá trị nhả ra là một sự kiện: `conversation` báo id hội thoại ngay
+     * đầu lượt, `delta` cho chữ mới, `tool` cho bước đang gọi dịch vụ của khách.
      *
-     * @return Generator<int, array{type: string, text?: string, label?: string}, void, Conversation>
+     * @return Generator<int, array{type: string, text?: string, label?: string, conversation_id?: int}, void, Conversation>
      */
     public function ask(
         User $user,
@@ -72,6 +73,11 @@ class AskService
             'role' => 'user',
             'content' => $question,
         ]);
+
+        // Báo id ngay từ đầu: lượt hỏi có lỗi hay bị dừng giữa chừng thì máy
+        // khách vẫn biết hội thoại nào đã được tạo, để hỏi lại vào đúng chỗ đó
+        // thay vì mở thêm một hội thoại trùng. Bản desktop cũ bỏ qua sự kiện lạ.
+        yield ['type' => 'conversation', 'conversation_id' => $conversation->id];
 
         $resolved = $this->providers->for($user);
         $conversationMessages = $this->buildMessages($conversation, $question);
@@ -153,11 +159,16 @@ class AskService
 
     private function startConversation(User $user, string $question, ?string $imageDataUrl): Conversation
     {
-        $path = $imageDataUrl === null ? null : $this->storeImage($user, $imageDataUrl);
+        $image = $imageDataUrl === null ? null : $this->storeImage($user, $imageDataUrl);
+        $path = $image['path'] ?? null;
 
         return $user->conversations()->create([
-            'title' => Str::limit(trim($question), 80),
+            'title' => Str::limit(Str::squish($question), 80),
             'image_path' => $path,
+            // Kích thước ở lại sau khi ảnh bị dọn, để lịch sử vẫn biết hội thoại
+            // từng bắt đầu từ một ảnh chụp và giữ đúng khung khi hiện lại.
+            'image_width' => $image['width'] ?? null,
+            'image_height' => $image['height'] ?? null,
             'image_expires_at' => $path === null
                 ? null
                 : now()->addDays((int) config('snapask.image.retention_days')),
@@ -166,8 +177,10 @@ class AskService
 
     /**
      * Giải mã data URL và cất ảnh lên disk.
+     *
+     * @return array{path: string, width: ?int, height: ?int}
      */
-    private function storeImage(User $user, string $dataUrl): string
+    private function storeImage(User $user, string $dataUrl): array
     {
         if (preg_match('/^data:([\w\/+.-]+);base64,(.+)$/s', $dataUrl, $matches) !== 1) {
             throw new InvalidArgumentException('Ảnh gửi lên không đúng định dạng data URL.');
@@ -198,7 +211,10 @@ class AskService
         $path = sprintf('snapask/%d/%s.%s', $user->id, Str::uuid(), $extension);
         Storage::disk(config('snapask.image.disk'))->put($path, $binary);
 
-        return $path;
+        $size = @getimagesizefromstring($binary);
+        $dimension = fn (int $index): ?int => is_array($size) && $size[$index] > 0 ? min($size[$index], 65535) : null;
+
+        return ['path' => $path, 'width' => $dimension(0), 'height' => $dimension(1)];
     }
 
     /**

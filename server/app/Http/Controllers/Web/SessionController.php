@@ -35,7 +35,7 @@ class SessionController extends Controller
         // mới để một phiên bị cố định từ trước không dùng lại được.
         $request->session()->regenerate();
 
-        return redirect()->intended(route('web.connectors.index'));
+        return redirect()->intended(route('dashboard'));
     }
 
     public function destroy(Request $request): RedirectResponse

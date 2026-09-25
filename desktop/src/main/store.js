@@ -5,34 +5,69 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const config = require('./config');
+const schema = require('./settings-schema');
 
 const FILE = () => path.join(app.getPath('userData'), 'snapask.json');
 
-const DEFAULTS = {
-  // Không còn là thứ người dùng nhập; xem src/main/config.js. Vẫn để trong kho
-  // cài đặt để một bản triển khai riêng ghi đè được bằng snapask.json.
-  serverUrl: config.serverUrl(),
-  maxImageWidth: 1280,
-};
-
 let cache = null;
 
+/**
+ * Đọc snapask.json, trộn với mặc định của bản hiện tại.
+ *
+ * File của 0.2.2 vẫn đọc được: khoá mới lấy mặc định, khoá cũ và token giữ
+ * nguyên (xem settings-schema.js). Chỉ ghi lại xuống đĩa ở lần `write()` tiếp
+ * theo, để mở bản mới rồi quay về bản cũ không làm hỏng gì.
+ */
 function read() {
   if (cache) return cache;
 
+  let raw = {};
+
   try {
-    cache = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(FILE(), 'utf8')) };
+    raw = JSON.parse(fs.readFileSync(FILE(), 'utf8'));
   } catch {
-    cache = { ...DEFAULTS };
+    raw = {};
   }
+
+  cache = schema.migrate(raw, config.serverUrl(), config.normalizeServerUrl);
 
   return cache;
 }
 
+/**
+ * Ghi đè một phần cài đặt.
+ *
+ * Ghi ra file tạm rồi đổi tên: mất điện giữa chừng thì còn nguyên file cũ,
+ * không bị một snapask.json cụt làm mất token.
+ */
 function write(patch) {
   cache = { ...read(), ...patch };
-  fs.writeFileSync(FILE(), JSON.stringify(cache, null, 2), 'utf8');
+
+  const file = FILE();
+  const temp = `${file}.tmp`;
+
+  fs.writeFileSync(temp, JSON.stringify(cache, null, 2), 'utf8');
+  fs.renameSync(temp, file);
+
   return cache;
+}
+
+/**
+ * Đưa cài đặt về mặc định nhưng giữ đăng nhập.
+ *
+ * "Đặt lại cài đặt" không phải "đăng xuất": token và lựa chọn ngôn ngữ ở lại.
+ */
+function reset() {
+  const { token, tokenEnc, locale } = read();
+
+  cache = null;
+
+  return write({
+    ...schema.defaults(config.serverUrl()),
+    token: token ?? null,
+    tokenEnc: tokenEnc ?? null,
+    ...(locale ? { locale } : {}),
+  });
 }
 
 /**
@@ -65,9 +100,7 @@ function getToken() {
   return data.token || null;
 }
 
-const settings = () => {
-  const { token, tokenEnc, ...rest } = read();
-  return rest;
-};
+/** Cài đặt gửi xuống renderer: không bao giờ kèm token. */
+const settings = () => schema.publicView(read());
 
-module.exports = { read, write, settings, setToken, getToken };
+module.exports = { read, write, reset, settings, setToken, getToken };

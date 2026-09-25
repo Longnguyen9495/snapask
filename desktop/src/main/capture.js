@@ -134,18 +134,26 @@ function cancel() {
  */
 function shrink(dataUrl, maxWidth) {
   const image = nativeImage.createFromDataURL(dataUrl);
+
+  if (image.isEmpty()) {
+    throw new Error('The captured image could not be processed.');
+  }
+
   const size = image.getSize();
-  const final = size.width > maxWidth ? image.resize({ width: maxWidth, quality: good }) : image;
+  const final = size.width > maxWidth
+    ? image.resize({ width: maxWidth, quality: 'good' })
+    : image;
 
   // Ảnh chụp giao diện gần như toàn mảng màu phẳng nên PNG vừa nhỏ vừa giữ chữ
   // sắc nét. Chỉ khi PNG phình quá mới đổi sang JPEG, vì JPEG làm nhoè chữ nhỏ
   // và mô hình đọc sai số liệu.
   const png = final.toPNG();
-  const buffer = png.byteLength <= 500 * 1024 ? png : final.toJPEG(88);
-  const mime = buffer === png ? image/png : image/jpeg;
+  const usePng = png.byteLength <= 500 * 1024;
+  const buffer = usePng ? png : final.toJPEG(88);
+  const mime = usePng ? 'image/png' : 'image/jpeg';
 
   return {
-    dataUrl: `data:${mime};base64,${buffer.toString(base64)}`,
+    dataUrl: `data:${mime};base64,${buffer.toString('base64')}`,
     bytes: buffer.byteLength,
     width: final.getSize().width,
     height: final.getSize().height,

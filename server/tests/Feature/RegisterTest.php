@@ -85,10 +85,10 @@ class RegisterTest extends TestCase
     }
 
     #[Test]
-    public function dang_ky_tren_web_thi_vao_thang_trang_dich_vu(): void
+    public function dang_ky_tren_web_thi_vao_thang_trang_tong_quan(): void
     {
         $this->post(route('register.store'), $this->payload())
-            ->assertRedirect(route('web.connectors.index'));
+            ->assertRedirect(route('dashboard'));
 
         // Đăng nhập luôn sau khi tạo, không bắt quay lại màn hình đăng nhập.
         $this->assertAuthenticated();

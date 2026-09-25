@@ -33,14 +33,14 @@ class ConnectorPageTest extends TestCase
     }
 
     #[Test]
-    public function dang_nhap_bang_trinh_duyet_roi_vao_trang_dich_vu(): void
+    public function dang_nhap_bang_trinh_duyet_roi_vao_trang_tong_quan(): void
     {
         User::factory()->create(['email' => 'demo@snapask.test']);
 
         $this->post(route('login.store'), [
             'email' => 'demo@snapask.test',
             'password' => 'password',
-        ])->assertRedirect(route('web.connectors.index'));
+        ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticated();
     }

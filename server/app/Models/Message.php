@@ -12,6 +12,14 @@ class Message extends Model
     /** @use HasFactory<MessageFactory> */
     use HasFactory;
 
+    /**
+     * Mỗi tin nhắn mới đẩy `updated_at` của hội thoại lên, để lịch sử xếp theo
+     * lần hoạt động gần nhất chứ không theo lúc tạo.
+     *
+     * @var array<int, string>
+     */
+    protected $touches = ['conversation'];
+
     protected $fillable = [
         'conversation_id',
         'role',
