@@ -5,7 +5,11 @@
 
 @push('styles')
 <style>
-  .head { padding: 76px 0 12px; }
+  /*
+   * Chỉ đặt lề trên dưới. Viết `padding: 76px 0 12px` sẽ xoá luôn
+   * `padding-inline` mà `.shell` đặt, và tiêu đề dính sát mép màn hình điện thoại.
+   */
+  .head { padding-block: 76px 12px; }
   .head h1 {
     font-size: clamp(30px, 5vw, 42px); font-weight: 700;
     letter-spacing: -.032em; line-height: 1.1; text-wrap: balance;

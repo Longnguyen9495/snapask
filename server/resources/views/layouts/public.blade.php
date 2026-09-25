@@ -29,7 +29,8 @@
 
   .top { position: sticky; top: 0; z-index: 20; min-height: 68px; border-bottom: 1px solid var(--line-soft); background: rgba(16, 15, 14, .92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .top__inner { display: flex; align-items: center; gap: 24px; min-height: 68px; }
-  .brand { display: inline-flex; align-items: center; gap: 10px; flex: none; color: var(--text); text-decoration: none; }
+  /* min-height 44px: logo cũng là một link về trang chủ, phải bấm trúng bằng ngón tay. */
+  .brand { display: inline-flex; align-items: center; gap: 10px; flex: none; min-height: 44px; color: var(--text); text-decoration: none; }
   .brand svg { width: 29px; height: 29px; flex: none; }
   .brand__name { font-size: 16px; font-weight: 650; letter-spacing: -.018em; }
   .top__nav { display: flex; align-items: center; gap: 2px; }
@@ -79,6 +80,14 @@
     .foot__inner { flex-direction: column; }
     .foot__brand { flex-direction: column; gap: 4px; }
     .foot__links { margin-left: 0; }
+
+    /*
+     * Ngón tay cần chỗ rộng hơn con trỏ chuột. Link chân trang vốn chỉ cao
+     * bằng dòng chữ (21px) — chạm rất dễ trượt. Nới bằng padding dọc chứ không
+     * bằng chiều cao dòng, để chữ không bị đẩy giãn ra.
+     */
+    .foot__links { gap: 4px 18px; }
+    .foot__links a { display: inline-flex; align-items: center; min-height: 44px; }
   }
   @media (min-width: 901px) { .top__link--menu { display: none; } }
   @supports not (backdrop-filter: blur(1px)) { .top { background: #141210; } }
