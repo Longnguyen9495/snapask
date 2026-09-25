@@ -107,8 +107,10 @@
       @endforeach
     </div>
 
+    {{-- `data-chart-src`: thư viện vẽ biểu đồ chỉ được tải khi câu trả lời thật sự cần. --}}
     <div class="try-workspace" data-try-demo data-step="select"
-         data-endpoint="{{ route('demo.ask') }}" data-live="{{ $demoLive ? '1' : '0' }}">
+         data-endpoint="{{ route('demo.ask') }}" data-live="{{ $demoLive ? '1' : '0' }}"
+         data-chart-src="{{ asset('js/chart.umd.min.js') }}">
       <div class="try-workspace__bar">
         <div>
           <strong>{{ __('Interactive demo') }}</strong>

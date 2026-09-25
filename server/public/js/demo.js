@@ -355,14 +355,16 @@
 
       if (fenceMark) {
         if (fence) {
-          out.push(fence.node);
+          // Khối ```chart là mô tả một biểu đồ, không phải mã để đọc. Để nguyên
+          // thì khách hỏi "vẽ biểu đồ" lại nhận về một đống JSON.
+          out.push(fence.lang === 'chart' ? chartSlot(fence.raw || '') : fence.node);
           fence = null;
         } else {
           flushAll();
           const pre = document.createElement('pre');
           const code = document.createElement('code');
           pre.append(code);
-          fence = { node: pre, code, lang: fenceMark[1] };
+          fence = { node: pre, code, lang: fenceMark[1], raw: '' };
         }
 
         continue;
@@ -370,6 +372,7 @@
 
       if (fence) {
         fence.code.textContent += (fence.code.textContent ? '\n' : '') + line;
+        fence.raw = (fence.raw ? fence.raw + '\n' : '') + line;
 
         continue;
       }
@@ -451,6 +454,106 @@
   }
 
   const cells = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+
+  /* ---------- biểu đồ ---------- */
+
+  /** Bảng màu của sản phẩm. Mô hình chỉ được nói dữ liệu, màu do trang quyết định. */
+  const CHART_COLORS = ['#e3a04b', '#d9784a', '#c9a227', '#b5763f', '#8f9a4e', '#a8643c'];
+
+  /** Chart.js nặng 200KB, nên chỉ tải khi câu trả lời thật sự có biểu đồ. */
+  let chartLib = null;
+
+  function loadChartLib() {
+    if (chartLib) return chartLib;
+
+    chartLib = new Promise((resolve, reject) => {
+      if (window.Chart) return resolve(window.Chart);
+
+      const script = document.createElement('script');
+      script.src = root.dataset.chartSrc || '/js/chart.umd.min.js';
+      script.onload = () => resolve(window.Chart);
+      script.onerror = () => reject(new Error('không tải được thư viện biểu đồ'));
+      document.head.append(script);
+    });
+
+    return chartLib;
+  }
+
+  /**
+   * Chỗ dành sẵn cho biểu đồ, vẽ ngay khi thư viện tải xong.
+   *
+   * Tải hỏng thì để lại đúng JSON dạng khối mã — khách vẫn đọc được số liệu,
+   * hơn là nhìn một khoảng trống không giải thích.
+   */
+  function chartSlot(raw) {
+    let spec;
+
+    try {
+      spec = JSON.parse(raw.trim());
+    } catch {
+      return codeBlock(raw);
+    }
+
+    const sets = (Array.isArray(spec.datasets) ? spec.datasets : [])
+      .filter((set) => set && Array.isArray(set.data))
+      .slice(0, 6);
+
+    if (!sets.length) return codeBlock(raw);
+
+    const figure = document.createElement('figure');
+    figure.className = 'try-chart';
+
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', String(spec.title || 'Biểu đồ').slice(0, 120));
+    figure.append(canvas);
+
+    loadChartLib()
+      .then((Chart) => {
+        const round = ['pie', 'doughnut', 'polarArea'].includes(spec.type);
+
+        new Chart(canvas, {
+          type: ['bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea'].includes(spec.type) ? spec.type : 'bar',
+          data: {
+            labels: (Array.isArray(spec.labels) ? spec.labels : []).slice(0, 60).map((l) => String(l).slice(0, 40)),
+            datasets: sets.map((set, index) => ({
+              label: String(set.label ?? '').slice(0, 40),
+              data: set.data.slice(0, 60).map((v) => (Number.isFinite(Number(v)) ? Number(v) : null)),
+              backgroundColor: round ? CHART_COLORS : (spec.type === 'line' ? 'transparent' : CHART_COLORS[index % CHART_COLORS.length]),
+              borderColor: CHART_COLORS[index % CHART_COLORS.length],
+              borderWidth: spec.type === 'line' ? 2 : 1,
+              tension: spec.type === 'line' ? 0.28 : 0,
+              pointRadius: spec.type === 'line' ? 2.5 : 3,
+            })),
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: { display: round || sets.length > 1, labels: { color: '#a49c90', boxWidth: 11, font: { size: 11 } } },
+              title: { display: Boolean(spec.title), text: String(spec.title || '').slice(0, 80), color: '#f3efe8', font: { size: 12.5, weight: '600' } },
+            },
+            scales: round ? {} : {
+              x: { ticks: { color: '#a49c90', font: { size: 10.5 } }, grid: { color: '#2c2620' } },
+              y: { ticks: { color: '#a49c90', font: { size: 10.5 } }, grid: { color: '#2c2620' }, beginAtZero: true },
+            },
+          },
+        });
+      })
+      .catch(() => figure.replaceWith(codeBlock(raw)));
+
+    return figure;
+  }
+
+  function codeBlock(text) {
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    code.textContent = text;
+    pre.append(code);
+
+    return pre;
+  }
 
   function wrapTable({ heads, aligns, rows }) {
     const wrap = document.createElement('div');

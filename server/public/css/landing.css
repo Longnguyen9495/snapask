@@ -387,6 +387,13 @@
 .try-answer .md-table .md-right { text-align: right; font-variant-numeric: tabular-nums; }
 .try-answer .md-table .md-center { text-align: center; }
 
+/*
+ * Biểu đồ cần một khung có chiều cao thật: Chart.js với maintainAspectRatio
+ * tắt sẽ tính ra canvas 0px nếu để nó tự co theo nội dung.
+ */
+.try-chart { margin: 0; padding: 12px; height: 230px; border: 1px solid #3a322a; border-radius: 10px; background: #12100f; }
+.try-chart canvas { width: 100% !important; height: 100% !important; }
+
 .try-result__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
 .try-cta { min-height: 40px; padding: 8px 15px; font-size: 13px; }
 .try-error { margin-top: 12px; padding: 11px 13px; border: 1px solid #6b3a30; border-radius: 10px; color: #edb8ab; background: #221512; font-size: 13px; text-wrap: pretty; }
