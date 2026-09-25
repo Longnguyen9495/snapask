@@ -1,8 +1,12 @@
 # Bật gửi email trên production
 
-Trạng thái hiện tại (đọc từ máy chủ ngày 26/09/2026):
+> **Đã cấu hình xong ngày 26/09/2026.** Cả thư xác thực lẫn thư đặt lại mật
+> khẩu đã gửi thật từ production, không lỗi SMTP. Phần dưới giữ lại để tra khi
+> dựng máy chủ mới hoặc khi thư ngừng tới.
 
-| Biến | Production | Cần thành |
+Trạng thái trước khi sửa:
+
+| Biến | Trước khi sửa | Đã đặt thành |
 |---|---|---|
 | `MAIL_MAILER` | `log` | `smtp` |
 | `MAIL_SCHEME` | *(thiếu)* | `smtps` |
@@ -21,7 +25,7 @@ mở đúng. `.env` đang `640 rexllm:www-data` — giữ nguyên quyền đó s
 
 ## Các bước
 
-Bản sao lưu `.env.bak-20260925-184351` đã được tạo sẵn trong cùng thư mục.
+Bản sao lưu trước khi sửa: `.env.bak-20260925-184351`, cùng thư mục với `.env`.
 
 1. Mở `.env` bằng đúng user, không dùng root:
 
