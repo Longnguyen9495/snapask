@@ -23,9 +23,16 @@ class RegisterTest extends TestCase
         ];
     }
 
+    /**
+     * Khai rõ là không bắt xác thực, vì chỉ lúc đó mới cấp token ngay. Bật lên
+     * thì đăng ký trả `verification_required` — trường hợp đó nằm ở
+     * EmailVerificationTest.
+     */
     #[Test]
     public function dang_ky_tu_app_thi_nhan_luon_token(): void
     {
+        config(['snapask.verify_email' => false]);
+
         $this->postJson(route('auth.register'), $this->payload(['device_name' => 'May cua Long']))
             ->assertCreated()
             ->assertJsonPath('user.email', 'long@snapask.test')

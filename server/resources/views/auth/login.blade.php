@@ -7,6 +7,8 @@
   <h1>{{ __('Sign in') }}</h1>
   <p class="lead">{{ __('Manage your conversations, AI models and connected services.') }}</p>
 
+  <x-flash />
+
   <form method="POST" action="{{ route('login.store') }}" class="form panel" novalidate>
     @csrf
 
@@ -24,6 +26,10 @@
     </label>
 
     <button type="submit" class="btn">{{ __('Sign in') }}</button>
+
+    <p class="form__foot">
+      <a href="{{ route('password.request') }}">{{ __('Forgot your password?') }}</a>
+    </p>
   </form>
 
   <p class="guest__foot">

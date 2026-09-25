@@ -114,4 +114,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | Số phút link xác thực email còn dùng được. Laravel vẫn mặc định 60 phút
+    | dù không khai khối này, nhưng thư gửi đi có nói rõ hạn cho người nhận —
+    | khai ra đây để đổi một chỗ là cả link lẫn câu chữ trong thư cùng đổi.
+    |
+    */
+
+    'verification' => [
+        'expire' => (int) env('AUTH_VERIFICATION_EXPIRE', 60),
+    ],
+
 ];
