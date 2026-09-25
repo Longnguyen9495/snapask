@@ -146,6 +146,50 @@ hình cũ vẫn có hiệu lực.
 endpoint với Cái Tiệm Neo. Khách nào tự cắm khoá riêng ở `/providers` thì không
 bị hạn mức gói chặn.
 
+## Gửi email: xác thực tài khoản và quên mật khẩu
+
+Hai lá thư này đi thẳng, **không qua hàng đợi** (`ResetPassword` và `VerifyEmail`
+của Laravel không implement `ShouldQueue`), nên không cần worker. Đổi lại, sai
+cấu hình là hỏng ngay tại chỗ, không có gì nằm lại trong bảng `jobs` để xem.
+
+Cả hai chỉ chạy khi `.env` production có đủ khối dưới đây. Nhắc lại mục 5 phần
+deploy: **`.env` không đi theo `git pull`** — code mới push lên không tự mang
+theo bất kỳ biến nào trong này.
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtps
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=465
+MAIL_USERNAME=<địa chỉ gmail>
+MAIL_PASSWORD="<app password 16 ký tự>"
+MAIL_FROM_ADDRESS=<trùng MAIL_USERNAME>
+MAIL_FROM_NAME="SnapAsk"
+
+# Thiếu dòng này thì đăng ký xong vào thẳng, không thư nào được gửi.
+SNAPASK_VERIFY_EMAIL=true
+```
+
+Ba chỗ sai thường gặp, theo thứ tự hay gặp:
+
+1. **Quên `php artisan config:cache`.** Production chạy config đã cache; sửa
+   `.env` mà không chạy lại thì giá trị cũ vẫn có hiệu lực.
+2. **`MAIL_PASSWORD` là mật khẩu Google thường.** Phải là App Password 16 ký tự,
+   lấy trong phần bảo mật của tài khoản Google. Gmail đã chặn mật khẩu thường.
+3. **`MAIL_FROM_ADDRESS` khác `MAIL_USERNAME`.** Gmail sẽ đổi lại địa chỉ gửi và
+   thư dễ rơi thẳng vào spam.
+
+`APP_URL` cũng phải là domain thật: thư gửi được nhưng `APP_URL` còn trỏ
+`.local` thì link trong thư mở ra không tới đâu.
+
+Chẩn đoán khi thư không tới — chỉ đọc, không sửa gì:
+
+```bash
+sudo -u rexllm bash docs/chan-doan-email.sh
+```
+
+Script in ra cấu hình đang thực sự có hiệu lực (sau cache), chỉ thẳng biến nào
+sai, cho biết tài khoản có tồn tại trên production không, và lọc log lỗi SMTP.
 ## Kiểm tra nhanh, read-only
 
 ```bash
