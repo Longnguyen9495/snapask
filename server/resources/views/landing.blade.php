@@ -61,7 +61,8 @@
       <p>{{ __('Keep your context visible while SnapAsk handles the capture, question, and answer.') }}</p>
     </header>
 
-    <div class="workflow-canvas">
+    {{-- data-scene: ba khối minh hoạ tự diễn hoạt khi cuộn tới. --}}
+    <div class="workflow-canvas" data-scene>
       <div class="workflow-canvas__rail" aria-hidden="true"></div>
       <article class="workflow-action workflow-action--keys">
         <div class="key-combo" aria-hidden="true"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>W</kbd></div>
@@ -159,7 +160,8 @@
       <h2 id="features-title">{{ __('Precise tools before and after capture.') }}</h2>
     </header>
 
-    <div class="bento">
+    {{-- data-stagger: năm thẻ hiện lần lượt; data-scene: các hình minh hoạ tự chạy. --}}
+    <div class="bento" data-stagger data-scene>
       <article class="feature-card feature-card--markup">
         <div class="markup-visual" aria-hidden="true">
           <div class="markup-visual__document">{{ __('Quarterly revenue') }}<strong>$84,240</strong><span>{{ __('Review this total') }}</span></div>
@@ -193,7 +195,7 @@
         <p>{{ __('Sensitive screen content needs clear limits, not vague promises.') }}</p>
         <div class="privacy__retention"><strong>{{ config('snapask.image.retention_days') }}</strong><span>{{ __('days until screenshots are automatically deleted') }}</span></div>
       </div>
-      <div class="privacy__commitments">
+      <div class="privacy__commitments" data-stagger>
         <article><span aria-hidden="true">01</span><div><h3>{{ __('Screenshots are deleted after :days days.', ['days' => config('snapask.image.retention_days')]) }}</h3><p>{{ __('Conversation text remains available; the image does not.') }}</p></div></article>
         <article><span aria-hidden="true">02</span><div><h3>{{ __('The AI key never reaches your machine.') }}</h3><p>{{ __('Provider requests run on the server, away from the unpackable desktop app.') }}</p></div></article>
         <article><span aria-hidden="true">03</span><div><h3>{{ __('Service tokens are encrypted at rest.') }}</h3><p>{{ __('Stored tokens are encrypted and never returned through the API.') }}</p></div></article>
@@ -208,7 +210,7 @@
         <h2 id="download-title">{{ __('Put SnapAsk one shortcut away.') }}</h2>
         <p>{{ __('Choose your platform. SnapAsk will prioritize the one you are using now.') }}</p>
       </div>
-      <div class="platforms" data-platforms>
+      <div class="platforms" data-platforms data-stagger>
         @foreach ($platforms as $platform => $label)
           @php $build = $release['builds'][$platform]; @endphp
           <article class="platform" data-platform="{{ $platform }}">

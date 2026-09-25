@@ -29,7 +29,6 @@
 
   const demo = document.querySelector('[data-capture-demo]');
   const replayButtons = document.querySelectorAll('[data-replay]');
-  let demoHasPlayed = false;
   let replayTimer;
 
   const showFinalDemoState = () => {
@@ -60,17 +59,23 @@
         playDemo();
       }
     } else {
-      const demoObserver = new IntersectionObserver((entries, observer) => {
+      // Diễn lại mỗi lần cuộn trở lại, không chỉ lần đầu. Chờ demo đi hẳn khỏi
+      // màn hình rồi mới cho phát lại, để cuộn qua lại quanh mép không làm nó
+      // giật cục giữa chừng.
+      const demoObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting || demoHasPlayed) {
-            return;
+          // Đang diễn thì để yên: cuộn qua lại quanh ngưỡng 0.35 sẽ bắn sự kiện
+          // liên tục, phát lại mỗi lần thì đoạn phim không bao giờ chạy hết.
+          if (entry.isIntersecting) {
+            if (!demo.classList.contains('is-playing')) {
+              playDemo();
+            }
+          } else if (entry.intersectionRatio === 0) {
+            window.clearTimeout(replayTimer);
+            demo.classList.remove('is-playing', 'is-complete');
           }
-
-          demoHasPlayed = true;
-          playDemo();
-          observer.unobserve(entry.target);
         });
-      }, { threshold: 0.35 });
+      }, { threshold: [0, 0.35] });
 
       demoObserver.observe(demo);
     }
@@ -80,22 +85,83 @@
     button.addEventListener('click', playDemo);
   });
 
+  /*
+   * Hiện dần khi cuộn tới, và ẩn lại khi ra khỏi tầm nhìn.
+   *
+   * Không `unobserve` như trước: cuộn ngược lên rồi xuống lại mà trang đứng im
+   * thì người xem tưởng nó hỏng. Chỉ thu lại khi phần tử đã đi hẳn khỏi màn
+   * hình — thu ngay lúc mới khuất một góc sẽ thành nhấp nháy lúc cuộn chậm.
+   */
   const revealElements = document.querySelectorAll('.reveal');
   if (reducedMotion || !('IntersectionObserver' in window)) {
     revealElements.forEach((element) => element.classList.add('is-visible'));
   } else {
-    const revealObserver = new IntersectionObserver((entries, observer) => {
+    const revealObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (!entry.isIntersecting) {
-          return;
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        } else if (entry.intersectionRatio === 0) {
+          entry.target.classList.remove('is-visible');
         }
-
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
       });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: [0, 0.08] });
 
     revealElements.forEach((element) => revealObserver.observe(element));
+  }
+
+  /*
+   * Các khối con hiện lần lượt, không ùa vào cùng lúc.
+   *
+   * Độ trễ đặt bằng biến CSS thay vì viết sẵn trong stylesheet: số phần tử mỗi
+   * nhóm do Blade sinh ra, JS đếm được còn CSS thì không.
+   */
+  const stagger = document.querySelectorAll('[data-stagger]');
+  if (reducedMotion || !('IntersectionObserver' in window)) {
+    stagger.forEach((group) => group.classList.add('is-visible'));
+  } else {
+    // 55ms: đủ để mắt thấy thứ tự, đủ ngắn để nhóm năm thẻ không kéo quá 0.3s.
+    const step = 55;
+    const staggerObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        } else if (entry.intersectionRatio === 0) {
+          entry.target.classList.remove('is-visible');
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: [0, 0.12] });
+
+    stagger.forEach((group) => {
+      [...group.children].forEach((child, index) => {
+        child.style.setProperty('--stagger-delay', `${index * step}ms`);
+      });
+
+      staggerObserver.observe(group);
+    });
+  }
+
+  /*
+   * Khối minh hoạ tự diễn hoạt khi cuộn tới, và diễn lại mỗi lần quay lại.
+   *
+   * Gỡ class rồi ép trình duyệt tính lại layout (`offsetWidth`) trước khi gắn
+   * lại — không có bước đó thì trình duyệt gộp hai thao tác làm một và
+   * animation không chạy lần thứ hai.
+   */
+  const scenes = document.querySelectorAll('[data-scene]');
+  if (!reducedMotion && 'IntersectionObserver' in window) {
+    const sceneObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.remove('is-running');
+          void entry.target.offsetWidth;
+          entry.target.classList.add('is-running');
+        } else if (entry.intersectionRatio === 0) {
+          entry.target.classList.remove('is-running');
+        }
+      });
+    }, { threshold: [0, 0.45] });
+
+    scenes.forEach((scene) => sceneObserver.observe(scene));
   }
 
   const tryDemo = document.querySelector('[data-try-demo]');
