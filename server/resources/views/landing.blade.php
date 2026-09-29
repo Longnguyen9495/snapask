@@ -200,26 +200,31 @@
     <div class="bento" data-stagger data-scene>
       <article class="feature-card feature-card--markup">
         <div class="markup-visual" aria-hidden="true">
-          <div class="markup-visual__document">{{ __('Quarterly revenue') }}<strong>$84,240</strong><span>{{ __('Review this total') }}</span></div>
-          <div class="markup-visual__arrow"></div>
+          <div class="markup-visual__document">
+            <span>{{ __('Quarterly revenue') }}</span>
+            <strong class="markup-visual__amount">$84,240</strong>
+            <div class="markup-visual__bars"><i style="--h: 38%"></i><i style="--h: 52%"></i><i style="--h: 44%"></i><i style="--h: 70%"></i><i style="--h: 100%"></i></div>
+            <svg class="markup-visual__arrow" viewBox="0 0 160 80"><path class="markup-visual__shaft" pathLength="1" d="M154 76C118 76 64 62 10 10"/><path class="markup-visual__head" d="M10 10L27 12M10 10L12 27"/></svg>
+            <span class="markup-visual__note">{{ __('Review this total') }}</span>
+          </div>
         </div>
         <div><h3>{{ __('Mark up before you ask') }}</h3><p>{{ __('Add boxes, arrows, freehand notes, or text at full resolution before sending.') }}</p></div>
       </article>
       <article class="feature-card feature-card--blur">
-        <div class="blur-visual" aria-hidden="true"><span>ACME-4820</span><span class="blur-visual__mask"></span></div>
+        <div class="blur-visual" aria-hidden="true"><span>ACME-4820</span><span class="blur-visual__mask"></span><span class="blur-visual__scan"></span></div>
         <h3>{{ __('Blur sensitive data') }}</h3><p>{{ __('Hide names, addresses, and account details before the image leaves your machine.') }}</p>
       </article>
       <article class="feature-card feature-card--magnify">
-        <div class="lens-visual" aria-hidden="true"><span>12px</span></div>
+        <div class="lens-visual" aria-hidden="true"><span class="lens-visual__lens">12px</span></div>
         <h3>{{ __('A magnifier for small text') }}</h3><p>{{ __('Place selection edges accurately on dense interfaces and HiDPI screens.') }}</p>
       </article>
       <article class="feature-card feature-card--mcp">
         {{-- "MCP" là tên giao thức, không nói gì với người dùng; thay bằng chính chữ SnapAsk. --}}
-        <div class="connector-visual" aria-hidden="true"><span>SnapAsk</span><i></i><span>{{ __('Warehouse') }}</span></div>
+        <div class="connector-visual" aria-hidden="true"><span>SnapAsk</span><i></i><span class="connector-visual__target">{{ __('Warehouse') }}</span></div>
         <h3>{{ __('Connect your own services') }}</h3><p>{{ __('Let AI query real stock, orders, or appointments instead of guessing from pixels.') }}</p>
       </article>
       <article class="feature-card feature-card--key">
-        <div class="key-visual" aria-hidden="true"><span>sk</span><i></i><i></i></div>
+        <div class="key-visual" aria-hidden="true"><span class="key-visual__key"><b>sk</b><i></i></span><span class="key-visual__lock"></span></div>
         <h3>{{ __('Bring your own key') }}</h3><p>{{ __('Choose your provider and model, then pay that provider directly for usage.') }}</p>
       </article>
     </div>
