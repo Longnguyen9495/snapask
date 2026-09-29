@@ -1,6 +1,6 @@
 {
     "name": "snapask-desktop",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.",
     "main": "src/main/main.js",
     "private": true,
@@ -22,7 +22,7 @@
         "artifactName": "SnapAsk-Setup-${version}-${os}-${arch}.${ext}",
         "publish": {
             "provider": "generic",
-            "url": "https://snapask.vn/updates"
+            "url": "https://snapask.221-121-1-68.sslip.io/updates"
         },
         "directories": {
             "output": "dist",

@@ -4,15 +4,16 @@
  * Địa chỉ máy chủ SnapAsk.
  *
  * Cố định ở đây chứ không hỏi người dùng: khách cài bản phát hành chỉ cần email
- * và mật khẩu, không việc gì phải biết máy chủ nằm ở đâu. Khi phát hành, sửa
- * hằng số này rồi build lại.
+ * và mật khẩu, không việc gì phải biết máy chủ nằm ở đâu. Hằng số luôn là máy
+ * chủ production; lúc phát triển thì trỏ về máy local bằng biến môi trường
+ * (start-desktop.bat đã đặt sẵn).
  *
  * Vẫn đổi được mà không cần build lại, theo thứ tự ưu tiên:
  *   1. biến môi trường SNAPASK_SERVER_URL  (tiện nhất lúc phát triển)
  *   2. khoá "serverUrl" trong snapask.json ở thư mục userData
  *   3. hằng số dưới đây
  */
-const DEFAULT_SERVER_URL = 'http://snapask.local';
+const DEFAULT_SERVER_URL = 'https://snapask.221-121-1-68.sslip.io';
 const LEGACY_SERVER_URLS = new Set([
   'http://localhost:8000',
   'http://127.0.0.1:8000',
