@@ -1,6 +1,6 @@
 {
     "name": "snapask-desktop",
-    "version": "0.3.0",
+    "version": "0.3.2",
     "description": "Chụp một vùng màn hình rồi hỏi AI ngay tại chỗ.",
     "main": "src/main/main.js",
     "private": true,

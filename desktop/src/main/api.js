@@ -106,6 +106,16 @@ async function logout() {
 const me = () => request('/api/me');
 
 /**
+ * Xin link đăng nhập web dùng một lần, để mở trang quản lý trong app mà không
+ * phải gõ lại mật khẩu. Link hết hạn sau vài chục giây nên xin ngay trước khi mở.
+ */
+async function webSessionUrl(path) {
+  const body = await request('/api/auth/web-session', { method: 'POST', body: { path } });
+
+  return body.url;
+}
+
+/**
  * Ghi ngôn ngữ đã chọn lên tài khoản.
  *
  * Để cùng một người mở trang web hay mở app trên máy khác đều thấy đúng thứ
@@ -268,6 +278,7 @@ module.exports = {
   register,
   logout,
   me,
+  webSessionUrl,
   setLocale,
   listConversations,
   showConversation,

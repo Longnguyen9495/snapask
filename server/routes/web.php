@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\PasswordResetController;
 use App\Http\Controllers\Web\ProviderPageController;
 use App\Http\Controllers\Web\RegisterPageController;
 use App\Http\Controllers\Web\SessionController;
+use App\Http\Controllers\Web\SessionHandoffController;
 use App\Http\Controllers\Web\SettingsPageController;
 use App\Http\Controllers\Web\UpdateFileController;
 use Illuminate\Support\Facades\Route;
@@ -99,6 +100,15 @@ Route::middleware('guest')->group(function (): void {
         ->middleware('throttle:6,1')
         ->name('password.store');
 });
+
+/*
+ * Link đăng nhập dùng một lần do app desktop xin qua API. Không đặt trong
+ * `guest`: cửa sổ của app có thể còn giữ phiên cũ, và controller tự thay nó.
+ */
+Route::get('session/handoff/{token}', SessionHandoffController::class)
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->middleware('throttle:20,1')
+    ->name('session.handoff');
 
 Route::middleware('auth')->group(function (): void {
     Route::post('logout', [SessionController::class, 'destroy'])->name('logout');

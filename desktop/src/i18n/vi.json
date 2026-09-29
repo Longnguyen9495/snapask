@@ -231,5 +231,9 @@
   "Your question": "Câu hỏi của bạn",
   "Your session has ended. Sign in again.": "Phiên đăng nhập đã hết. Hãy đăng nhập lại.",
   "Chart": "Biểu đồ",
-  "Table": "Bảng"
+  "Table": "Bảng",
+  "Downloading SnapAsk :version…": "Đang tải SnapAsk :version…",
+  "The update downloads in the background. We will let you know when it is ready.": "Bản cập nhật tải ngầm, tải xong sẽ báo bạn.",
+  "Click to restart and install now. Otherwise it installs the next time SnapAsk quits.": "Bấm để khởi động lại và cài ngay. Không thì lần tới thoát SnapAsk sẽ tự cài.",
+  "Restart to update to :version": "Khởi động lại để cập nhật lên :version"
 }

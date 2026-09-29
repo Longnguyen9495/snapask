@@ -1,6 +1,6 @@
 'use strict';
 
-const { BrowserWindow, screen, shell } = require('electron');
+const { BrowserWindow, screen, session, shell } = require('electron');
 const path = require('node:path');
 
 const store = require('./store');
@@ -235,11 +235,122 @@ const isWorkspaceSender = (sender) => alive(workspaceWindow) && sender.id === wo
 const isChatSender = (sender) => alive(chatWindow) && sender.id === chatWindow.webContents.id;
 const isAuthSender = (sender) => alive(authWindow) && sender.id === authWindow.webContents.id;
 
+const serverOrigin = () => new URL(store.read().serverUrl).origin;
+
 /** Mở một trang của máy chủ SnapAsk trong trình duyệt. */
 function openServerPage(page) {
   const url = new URL(page.replace(/^\/+/, ''), `${store.read().serverUrl.replace(/\/+$/, '')}/`);
 
   return shell.openExternal(url.toString());
+}
+
+/**
+ * Phiên riêng cho cửa sổ quản lý: cookie web không lẫn với phần còn lại của
+ * app, và đăng xuất thì xoá sạch được mà không đụng tới gì khác.
+ */
+const PORTAL_PARTITION = 'persist:snapask-portal';
+const portalSession = () => session.fromPartition(PORTAL_PARTITION);
+
+let portalWindow = null;
+
+/**
+ * Trang quản lý của máy chủ, mở ngay trong app.
+ *
+ * Đây là nội dung web thật chứ không phải file cục bộ, nên khoá chặt hơn các
+ * cửa sổ khác: không preload, không quyền hệ thống, chỉ được đi lại trong đúng
+ * máy chủ SnapAsk. Link ra ngoài thì đẩy sang trình duyệt.
+ *
+ * @param {string} url  Link đăng nhập dùng một lần từ `api.webSessionUrl`.
+ */
+function openPortal(url) {
+  if (alive(portalWindow)) {
+    portalWindow.loadURL(url);
+    if (portalWindow.isMinimized()) portalWindow.restore();
+    portalWindow.show();
+    portalWindow.focus();
+
+    return portalWindow;
+  }
+
+  const area = screen.getPrimaryDisplay().workAreaSize;
+
+  portalWindow = new BrowserWindow({
+    width: Math.min(1240, area.width),
+    height: Math.min(820, area.height),
+    minWidth: 760,
+    minHeight: 560,
+    show: false,
+    title: 'SnapAsk',
+    icon: iconFile(),
+    backgroundColor: BACKGROUND,
+    autoHideMenuBar: true,
+    webPreferences: {
+      partition: PORTAL_PARTITION,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      spellcheck: false,
+    },
+  });
+
+  portalWindow.setMenuBarVisibility(false);
+  portalSession().setPermissionRequestHandler((webContents, permission, callback) => callback(false));
+
+  const contents = portalWindow.webContents;
+  const inside = (target) => {
+    try {
+      return new URL(target).origin === serverOrigin();
+    } catch {
+      return false;
+    }
+  };
+  const openOutside = (target) => {
+    if (/^https?:\/\//i.test(target)) shell.openExternal(target);
+  };
+
+  contents.setWindowOpenHandler(({ url: target }) => {
+    // Link `target="_blank"` trong chính trang quản lý thì mở ngay tại cửa sổ này.
+    if (inside(target)) contents.loadURL(target);
+    else openOutside(target);
+
+    return { action: 'deny' };
+  });
+
+  const guard = (event, target) => {
+    if (inside(target)) return;
+
+    event.preventDefault();
+    openOutside(target);
+  };
+  contents.on('will-navigate', guard);
+  contents.on('will-redirect', guard);
+  contents.on('will-attach-webview', (event) => event.preventDefault());
+
+  // Tiêu đề cửa sổ theo trang đang xem, như một cửa sổ bình thường của app.
+  contents.on('page-title-updated', (event, title) => {
+    event.preventDefault();
+    portalWindow?.setTitle(title ? `${title} · SnapAsk` : 'SnapAsk');
+  });
+
+  // Rơi về trang đăng nhập web (bấm Đăng xuất, hoặc phiên web hết hạn) thì cửa
+  // sổ này hết việc: đóng lại, lần sau mở từ app sẽ tự đăng nhập lại.
+  contents.on('did-navigate', (event, target) => {
+    if (inside(target) && /^\/(login|register)\/?$/.test(new URL(target).pathname)) portalWindow?.close();
+  });
+
+  portalWindow.once('ready-to-show', () => portalWindow?.show());
+  portalWindow.on('closed', () => { portalWindow = null; });
+
+  portalWindow.loadURL(url);
+
+  return portalWindow;
+}
+
+/** Đăng xuất khỏi app: đóng cửa sổ quản lý và bỏ luôn phiên web của nó. */
+async function closePortal() {
+  if (alive(portalWindow)) portalWindow.destroy();
+
+  await portalSession().clearStorageData().catch(() => {});
 }
 
 module.exports = {
@@ -257,6 +368,8 @@ module.exports = {
   isChatSender,
   isAuthSender,
   openServerPage,
+  openPortal,
+  closePortal,
   workspace: () => (alive(workspaceWindow) ? workspaceWindow : null),
   chat: () => (alive(chatWindow) ? chatWindow : null),
   auth: () => (alive(authWindow) ? authWindow : null),

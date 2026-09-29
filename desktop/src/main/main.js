@@ -36,6 +36,10 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 
+// Windows chỉ hiện thông báo của app khi id này trùng với shortcut mà bộ cài
+// tạo ra, tức là `appId` trong package.json.
+if (process.platform === 'win32') app.setAppUserModelId('vn.snapask.desktop');
+
 /* ============================================================
  * Cửa sổ và phiên đăng nhập
  * ============================================================ */
@@ -82,6 +86,7 @@ function openForSession() {
  */
 function endSession({ reason }) {
   streams.cancelAll();
+  windows.closePortal();
 
   if (reason === 'expired') store.setToken(null);
 
@@ -108,6 +113,25 @@ function beginSession() {
   showWorkspace();
   windows.broadcast('session:changed', { authenticated: true });
   rebuildTrayMenu();
+}
+
+/**
+ * Mở một trang quản lý của máy chủ ngay trong app, đã đăng nhập sẵn.
+ *
+ * Chưa đăng nhập app thì không có gì để đổi lấy phiên web, nên mở trình duyệt
+ * như cũ. Xin link hỏng vì lý do khác (mất mạng, máy chủ cũ chưa có tuyến này)
+ * cũng rơi về trình duyệt, để nút bấm không bao giờ thành không làm gì.
+ */
+async function openManagement(page) {
+  if (!store.getToken()) return windows.openServerPage(page);
+
+  try {
+    windows.openPortal(await api.webSessionUrl(page));
+  } catch (error) {
+    if (error?.code === 'unauthorized') throw error;
+
+    windows.openServerPage(page);
+  }
 }
 
 /** Lỗi xác thực từ bất kỳ lời gọi nào đều dẫn về đây. */
@@ -338,8 +362,10 @@ function rebuildTrayMenu() {
     { label: t('New question'), click: () => workspaceCommand('new-chat'), enabled: signedIn },
     { type: 'separator' },
     { label: t('Settings…'), click: () => workspaceCommand('open-settings'), enabled: signedIn },
-    { label: t('Open the management page'), click: () => windows.openServerPage('dashboard') },
-    { label: t('Check for updates…'), click: () => updater.check({ notify: true }) },
+    { label: t('Open the management page'), click: () => openManagement('dashboard').catch(handleApiError) },
+    updater.getState().status === 'downloaded'
+      ? { label: t('Restart to update to :version', { version: updater.getState().version }), click: () => updater.install() }
+      : { label: t('Check for updates…'), click: () => updater.check({ notify: true }) },
     { type: 'separator' },
     { label: t('Quit'), click: () => { app.isQuitting = true; app.quit(); } },
   ]));
@@ -621,7 +647,7 @@ function registerLegacyIpc() {
 
   // Trang quản lý của máy chủ: tổng quan, mô hình AI và dịch vụ kết nối.
   ipcMain.handle('app:open-management', (event) => {
-    if (allowed(event)) windows.openServerPage('dashboard');
+    if (allowed(event)) return openManagement('dashboard').catch(handleApiError);
   });
 
   // Lịch sử giờ nằm ngay trong workspace; nút cũ của ô chat nhỏ mở nó thay vì trình duyệt.
@@ -883,9 +909,10 @@ function registerWorkspaceIpc() {
   /* ---------- mở ra ngoài ---------- */
 
   // Chỉ mở trang của chính máy chủ SnapAsk, theo đường dẫn cố định ở đây.
-  handle('external:open-provider-management', fromWorkspace, () => windows.openServerPage('providers'));
-  handle('external:open-dashboard', fromWorkspace, () => windows.openServerPage('dashboard'));
-  handle('external:open-account', fromWorkspace, () => windows.openServerPage('account'));
+  // Trang quản lý mở ngay trong app; "Mở trên web" thì đúng như tên, ra trình duyệt.
+  handle('external:open-provider-management', fromWorkspace, () => openManagement('providers'));
+  handle('external:open-dashboard', fromWorkspace, () => openManagement('dashboard'));
+  handle('external:open-account', fromWorkspace, () => openManagement('account'));
   handle('external:open-conversation', fromWorkspace, (event, id) => windows.openServerPage(`conversations/${validate.conversationId(id)}`));
 
   // Link trong câu trả lời: chỉ http/https, mở bằng trình duyệt mặc định.
@@ -941,6 +968,8 @@ app.whenReady().then(() => {
 
   updater.configure();
   updater.subscribe((state) => windows.sendToWorkspace('updates:state', { ...state, current: app.getVersion() }));
+  // Tải xong thì menu khay đổi thành mục cài ngay.
+  updater.subscribe((state) => { if (state.status === 'downloaded') rebuildTrayMenu(); });
   setTimeout(() => updater.check(), 5000);
 
   if (!launchedHidden) openForSession();

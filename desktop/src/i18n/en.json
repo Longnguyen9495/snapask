@@ -231,5 +231,9 @@
   "Your question": "Your question",
   "Your session has ended. Sign in again.": "Your session has ended. Sign in again.",
   "Chart": "Chart",
-  "Table": "Table"
+  "Table": "Table",
+  "Downloading SnapAsk :version…": "Downloading SnapAsk :version…",
+  "The update downloads in the background. We will let you know when it is ready.": "The update downloads in the background. We will let you know when it is ready.",
+  "Click to restart and install now. Otherwise it installs the next time SnapAsk quits.": "Click to restart and install now. Otherwise it installs the next time SnapAsk quits.",
+  "Restart to update to :version": "Restart to update to :version"
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthTokenController;
 use App\Http\Controllers\Api\ConnectorController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\RegisterController;
+use App\Http\Controllers\Api\WebSessionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
@@ -28,6 +29,11 @@ Route::delete('auth/token', [AuthTokenController::class, 'destroy'])
     ->name('auth.token.destroy');
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
+    // Link đăng nhập web dùng một lần, để app mở trang quản lý mà không bắt gõ lại mật khẩu.
+    Route::post('auth/web-session', [WebSessionController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('auth.web-session.store');
+
     Route::get('me', function (Request $request) {
         return response()->json([
             // `locale` đi kèm để ứng dụng desktop mở lên đúng thứ tiếng người
